@@ -50,7 +50,7 @@
 ### Интерактивно (рекомендуется)
 
 ```bash
-git clone https://github.com/<твой-юзер>/ai-spec-kit.git
+git clone https://github.com/askidmobile/ai-spec-kit.git
 cd ai-spec-kit
 ./install.sh
 ```
@@ -204,8 +204,7 @@ ai-spec-kit/
 ## Происхождение
 
 - Команды spec-driven workflow выросли из личного `~/.claude/commands/`.
-- `task-tracker` и `wiki-compiler` взяты из проекта
-  [Yttri](https://github.com/Yttri-app) и обобщены.
+- `task-tracker` и `wiki-compiler` взяты из проекта Yttri и обобщены.
 
 ## Лицензия
 

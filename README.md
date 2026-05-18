@@ -50,7 +50,7 @@ The full pipeline for going from idea to shipped feature:
 ### Interactive (recommended)
 
 ```bash
-git clone https://github.com/<your-username>/ai-spec-kit.git
+git clone https://github.com/askidmobile/ai-spec-kit.git
 cd ai-spec-kit
 ./install.sh
 ```
@@ -205,8 +205,7 @@ translate any command file; PRs welcome.
 ## Credits
 
 - Spec-driven workflow commands originated in a personal `~/.claude/commands/` setup.
-- `task-tracker` and `wiki-compiler` were extracted from the
-  [Yttri](https://github.com/Yttri-app) project and generalised.
+- `task-tracker` and `wiki-compiler` were extracted from the Yttri project and generalised.
 
 ## License
 
