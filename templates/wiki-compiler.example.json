@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "name": "My Knowledge Base",
+  "mode": "knowledge",
+  "sources": [
+    {
+      "path": "docs/",
+      "exclude": ["docs/wiki/", "docs/archive/", "node_modules/", ".git/"]
+    }
+  ],
+  "output": "docs/wiki/",
+  "auto_update": "prompt",
+  "article_sections": [
+    { "name": "Summary", "description": "Автономное краткое резюме темы — что это, зачем, текущее состояние", "required": true },
+    { "name": "Architecture", "description": "Архитектурные решения, компоненты, связи с другими модулями" },
+    { "name": "Key Decisions", "description": "ADR, trade-offs, обоснование выбора" },
+    { "name": "Implementation", "description": "Детали реализации, паттерны, технические нюансы" },
+    { "name": "API Surface", "description": "Публичные интерфейсы, эндпоинты, типы" },
+    { "name": "Data", "description": "Структуры данных, схемы, модели" },
+    { "name": "Gotchas", "description": "Подводные камни, edge cases, ограничения" },
+    { "name": "Open Questions", "description": "Открытые вопросы и TODO" },
+    { "name": "Sources", "description": "Обратные ссылки на исходные файлы", "required": true }
+  ],
+  "topic_hints": [],
+  "link_style": "obsidian"
+}
