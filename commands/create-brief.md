@@ -1,386 +1,386 @@
 ---
-description: Создание брифа нового проекта — верхнеуровневое видение (HLD), roadmap, стейкхолдеры, ограничения. Отправная точка для последующего /create-spec по каждому элементу roadmap.
+description: Create a new project brief — high-level vision (HLD), roadmap, stakeholders, constraints. Starting point for subsequent /create-spec calls on each roadmap item.
 allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(date *), Bash(find *), Bash(mkdir *), Write, Edit, TodoWrite, AskUserQuestion, WebSearch, WebFetch, mcp__brave-search__brave_web_search
-argument-hint: <название-проекта>
+argument-hint: <project-name>
 ---
 
-# Генератор брифа проекта (PROJECT BRIEF / HLD)
+# Project Brief Generator (PROJECT BRIEF / HLD)
 
-Ты — продуктовый стратег и системный архитектор. Твоя задача — создать верхнеуровневый бриф проекта: **$ARGUMENTS**
+You are a product strategist and system architect. Your task is to create a high-level project brief for: **$ARGUMENTS**
 
-> **Бриф описывает ЗАЧЕМ проект существует, ЧТО он из себя представляет на верхнем уровне, и КУДА движется.**
-> Это отправная точка. По каждому элементу roadmap потом создаются спецификации через `/create-spec`.
-
----
-
-## ФАЗА 1: Первичная разведка (МОЛЧА, без вывода)
-
-Определи контекст:
-
-1. **Существующий проект?** — проверь наличие package.json, README, src/, docs/ и т.д.
-   - Если проект уже существует → адаптируй бриф как документацию верхнего уровня
-   - Если пустая папка / нет проекта → это greenfield, бриф будет основой
-2. **Существующие документы** — проверь docs/, docs/briefs/, docs/specs/, README.md
-3. **Стек** — если есть маркеры стека (package.json, Cargo.toml, go.mod и т.д.) — запомни
-4. **Дата** — определи текущую дату через `date +%Y-%m-%d`
+> **The brief describes WHY the project exists, WHAT it looks like at the top level, and WHERE it is going.**
+> It is the starting point. Specifications are later created for each roadmap item via `/create-spec`.
 
 ---
 
-## ФАЗА 2: Брифинг — сбор видения (ОБЯЗАТЕЛЬНО)
+## PHASE 1: Initial recon (SILENT, no output)
 
-Задай пользователю вопросы **одним сообщением**. Группируй по блокам.
+Determine the context:
 
-### Блок 1: Видение и проблема
-1. **Elevator pitch**: Опиши проект в 1-2 предложениях. Что это и для кого?
-2. **Проблема**: Какую проблему решаем? Почему текущие решения не устраивают?
-3. **Целевая аудитория**: Кто основные пользователи? (роли, сегменты, персоны)
-4. **Ценностное предложение**: Почему пользователи выберут именно этот продукт?
-
-### Блок 2: Scope и границы
-5. **Ключевые возможности**: Перечисли 3-7 основных фич/модулей на верхнем уровне
-6. **Вне scope (v1)**: Что точно НЕ входит в первую версию?
-7. **Тип продукта**: Web-приложение / мобильное / CLI / API / библиотека / платформа / другое?
-
-### Блок 3: Контекст и ограничения
-8. **Стек**: Есть ли предпочтения по технологиям? Или нужна рекомендация?
-9. **Интеграции**: Внешние сервисы, API, провайдеры (оплата, авторизация, email и т.д.)?
-10. **Ограничения**: Бюджет, сроки, команда, инфраструктура, compliance?
-11. **Аналоги/референсы**: Какие существующие продукты похожи на то что делаем?
-
-### Блок 4: Успех
-12. **Критерии успеха MVP**: Как поймём что MVP успешен? (метрики, KPI, качественные)
-13. **Горизонт**: Когда нужен MVP? Какой горизонт планирования за MVP?
-
-**НЕ ПЕРЕХОДИ ДАЛЬШЕ, пока пользователь не ответит.**
-Если ответы слишком общие — уточняй. Видение должно быть конкретным.
+1. **Existing project?** — check for package.json, README, src/, docs/, etc.
+   - If the project already exists → adapt the brief as top-level documentation
+   - If empty folder / no project → this is greenfield, the brief will be the foundation
+2. **Existing documents** — check docs/, docs/briefs/, docs/specs/, README.md
+3. **Stack** — if there are stack markers (package.json, Cargo.toml, go.mod, etc.) — remember them
+4. **Date** — determine the current date via `date +%Y-%m-%d`
 
 ---
 
-## ФАЗА 3: Исследование (МОЛЧА)
+## PHASE 2: Briefing — gathering the vision (MANDATORY)
 
-На основе ответов:
+Ask the user questions **in a single message**. Group them into blocks.
 
-1. **Если проект существует** — изучи структуру, ключевые модули, текущее состояние
-2. **Аналоги** — если пользователь указал референсы, запомни их особенности
-3. **Стек** — если пользователь попросил рекомендацию, подготовь обоснованное предложение на основе требований
+### Block 1: Vision and problem
+1. **Elevator pitch**: Describe the project in 1-2 sentences. What is it and who is it for?
+2. **Problem**: What problem are we solving? Why don't current solutions cut it?
+3. **Target audience**: Who are the main users? (roles, segments, personas)
+4. **Value proposition**: Why will users choose this product?
 
----
+### Block 2: Scope and boundaries
+5. **Key capabilities**: List 3-7 main features/modules at the top level
+6. **Out of scope (v1)**: What is definitely NOT included in the first version?
+7. **Product type**: Web app / mobile / CLI / API / library / platform / other?
 
-## ФАЗА 3.5: Выявление и закрытие открытых вопросов
+### Block 3: Context and constraints
+8. **Stack**: Any technology preferences? Or do you want a recommendation?
+9. **Integrations**: External services, APIs, providers (payments, auth, email, etc.)?
+10. **Constraints**: Budget, timeline, team, infrastructure, compliance?
+11. **Analogs / references**: What existing products are similar to what we're building?
 
-> **Цель**: не оставлять в брифе размытых чеклистов «обсудить X» — они потом отравляют весь цикл spec → plan → implement → review. Закрыть сейчас, пока контекст свежий.
+### Block 4: Success
+12. **MVP success criteria**: How will we know the MVP is successful? (metrics, KPIs, qualitative)
+13. **Horizon**: When is the MVP needed? What's the planning horizon beyond MVP?
 
-### 3.5.1. Собери очередь (МОЛЧА)
-
-После Фазы 3 у тебя есть набор неоднозначностей. Типичные источники для брифа:
-
-- **Стек**: если пользователь сказал «нужна рекомендация» — выбор frontend / backend / БД / хостинга
-- **Scope MVP**: фичи на границе «Must vs Should» — куда отнести
-- **Монетизация / бизнес-модель**: если влияет на архитектуру (multitenancy, биллинг)
-- **Auth / роли**: одиночный пользователь vs мульти, SSO vs пароли, anonymous vs registered
-- **Платформы**: Web only / +Mobile / +Desktop; offline-first vs online-only
-- **Compliance**: GDPR / HIPAA / PCI — это меняет архитектуру
-- **Аналоги**: если пользователь дал референсы — какие конкретные паттерны заимствуем
-
-Выпиши всё во внутреннюю очередь. Пустая очередь → пропусти эту фазу.
-
-### 3.5.2. Задавай по одному через AskUserQuestion
-
-Следуй [правилам интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок).
-
-1. Один вызов = один вопрос (массив `questions` длины 1).
-2. 2-4 варианта + автоматический Other.
-3. Рекомендуемый первым с пометкой `(Рекомендуется)`, если есть обоснованная рекомендация.
-4. После ответа на текущий — обнови внутренние заметки и переходи к следующему. Если ответ открыл новый вопрос — добавь в конец очереди.
-
-### 3.5.3. Что записываем в бриф
-
-- **Закрытые вопросы** → в шаблоне секция «10. Решения по брифу» (Q→A с датой).
-- **Отложенные** (если пользователь явно выбрал «решим позже») → секция «9. Отложенные вопросы» с обязательным `Почему отложено` и `Когда нужен ответ`.
-- **«Открытых без обоснования»** в утверждённом брифе быть не должно.
+**DO NOT MOVE ON until the user responds.**
+If answers are too vague — clarify. The vision must be concrete.
 
 ---
 
-## Правила интерактивных вопросов (общий блок)
+## PHASE 3: Research (SILENT)
 
-При закрытии вопросов через `AskUserQuestion` соблюдай:
+Based on the answers:
 
-- **Один вопрос = один tool call**. Массив `questions` всегда длины 1.
-- **2-4 варианта** ответа (плюс автоматический «Other» от UI = свободный ввод).
-- **Контекст в вопросе**: 1-2 предложения почему спрашиваешь и как ответ повлияет на бриф.
-- **Label короткий** (1-5 слов), **description** объясняет последствия выбора (trade-off).
-- **Рекомендация** — первой опцией с суффиксом `(Рекомендуется)`, если есть обоснованная.
-- **header** — 1-3 слова, чип-метка темы.
-- **Не переходи** к Фазе 4, пока очередь не пуста или оставшиеся явно помечены как отложенные.
+1. **If the project exists** — study the structure, key modules, current state
+2. **Analogs** — if the user mentioned references, note their characteristics
+3. **Stack** — if the user asked for a recommendation, prepare a well-reasoned proposal based on requirements
 
 ---
 
-## ФАЗА 4: Генерация брифа
+## PHASE 3.5: Surfacing and closing open questions
 
-### Определи куда сохранять:
-- Если есть `docs/` — сохраняй в `docs/PROJECT-BRIEF.md`
-- Если нет — создай `docs/` и сохраняй в `docs/PROJECT-BRIEF.md`
+> **Goal**: don't leave the brief peppered with vague checklists like "discuss X" — those poison the entire spec → plan → implement → review cycle. Close them now, while context is fresh.
 
-### Шаблон брифа:
+### 3.5.1. Build the queue (SILENT)
+
+After Phase 3 you have a set of ambiguities. Typical sources for a brief:
+
+- **Stack**: if the user said "I need a recommendation" — choice of frontend / backend / DB / hosting
+- **MVP scope**: features on the "Must vs Should" boundary — where they go
+- **Monetization / business model**: if it affects architecture (multitenancy, billing)
+- **Auth / roles**: single user vs multi, SSO vs passwords, anonymous vs registered
+- **Platforms**: Web only / +Mobile / +Desktop; offline-first vs online-only
+- **Compliance**: GDPR / HIPAA / PCI — this changes architecture
+- **Analogs**: if the user gave references — which specific patterns to borrow
+
+Write everything into an internal queue. Empty queue → skip this phase.
+
+### 3.5.2. Ask one at a time via AskUserQuestion
+
+Follow the [interactive questions rules](#interactive-questions-rules-shared-block).
+
+1. One call = one question (`questions` array of length 1).
+2. 2-4 options + automatic Other.
+3. Recommended one first with `(Recommended)`, if there is a justified recommendation.
+4. After the answer to the current one — update internal notes and move to the next. If the answer opened a new question — append it to the queue.
+
+### 3.5.3. What we record in the brief
+
+- **Closed questions** → in the template section "10. Brief decisions" (Q→A with date).
+- **Deferred** (if the user explicitly chose "decide later") → section "9. Deferred questions" with mandatory `Why deferred` and `When the answer is needed`.
+- **"Open without justification"** must not exist in an approved brief.
+
+---
+
+## Interactive questions rules (shared block)
+
+When closing questions via `AskUserQuestion`, follow:
+
+- **One question = one tool call**. The `questions` array is always length 1.
+- **2-4 options** (plus the automatic "Other" from UI = free-form input).
+- **Context in the question**: 1-2 sentences on why you're asking and how the answer will shape the brief.
+- **Short label** (1-5 words), **description** explains the consequences of the choice (trade-off).
+- **Recommendation** — as the first option with `(Recommended)` suffix, if there is a justified one.
+- **header** — 1-3 words, chip-style topic label.
+- **Do not advance** to Phase 4 until the queue is empty or remaining items are explicitly marked as deferred.
+
+---
+
+## PHASE 4: Brief generation
+
+### Determine where to save:
+- If `docs/` exists — save to `docs/PROJECT-BRIEF.md`
+- If not — create `docs/` and save to `docs/PROJECT-BRIEF.md`
+
+### Brief template:
 
 ```markdown
-# Бриф проекта: [Название]
+# Project Brief: [Name]
 
-**Дата:** YYYY-MM-DD
-**Статус:** 📝 Черновик
-**Версия:** 1.0
+**Date:** YYYY-MM-DD
+**Status:** 📝 Draft
+**Version:** 1.0
 
 ---
 
-## 1. Видение
+## 1. Vision
 
 ### Elevator Pitch
-[1-2 предложения: что это и для кого]
+[1-2 sentences: what it is and who it's for]
 
-### Проблема
-[Какую проблему решаем. Почему это важно. Что происходит без нашего решения.]
+### Problem
+[What problem we're solving. Why it matters. What happens without our solution.]
 
-### Целевая аудитория
-| Сегмент | Описание | Ключевая боль |
-|---------|----------|---------------|
-| [Роль/персона] | [Кто они] | [Что их беспокоит] |
+### Target audience
+| Segment | Description | Key pain |
+|---------|-------------|----------|
+| [Role/persona] | [Who they are] | [What bothers them] |
 
-### Ценностное предложение
-[Почему пользователи выберут этот продукт. В чём уникальность.]
+### Value proposition
+[Why users will choose this product. What makes it unique.]
 
 ---
 
-## 2. Scope продукта
+## 2. Product scope
 
-### Ключевые возможности (Features)
+### Key capabilities (Features)
 
-| # | Возможность | Описание | Приоритет |
-|---|-------------|----------|-----------|
-| F1 | [Название] | [Краткое описание] | Must Have |
-| F2 | [Название] | [Краткое описание] | Must Have |
-| F3 | [Название] | [Краткое описание] | Should Have |
+| # | Capability | Description | Priority |
+|---|------------|-------------|----------|
+| F1 | [Name] | [Brief description] | Must Have |
+| F2 | [Name] | [Brief description] | Must Have |
+| F3 | [Name] | [Brief description] | Should Have |
 | ... | ... | ... | ... |
 
-### Вне scope (v1)
-- [Что явно откладываем]
-- [Что можно добавить позже]
+### Out of scope (v1)
+- [What we explicitly defer]
+- [What can be added later]
 
 ---
 
-## 3. Архитектура верхнего уровня (HLD)
+## 3. High-level architecture (HLD)
 
-### Тип системы
-[Web-приложение / SPA + API / мобильное / монолит / микросервисы / ...]
+### System type
+[Web app / SPA + API / mobile / monolith / microservices / ...]
 
-### Технологический стек
+### Technology stack
 
-| Слой | Технология | Обоснование |
-|------|-----------|-------------|
-| Frontend | [React/Vue/...] | [Почему] |
-| Backend | [Node/Python/...] | [Почему] |
-| База данных | [PostgreSQL/...] | [Почему] |
-| Инфраструктура | [Vercel/AWS/...] | [Почему] |
+| Layer | Technology | Rationale |
+|-------|-----------|-----------|
+| Frontend | [React/Vue/...] | [Why] |
+| Backend | [Node/Python/...] | [Why] |
+| Database | [PostgreSQL/...] | [Why] |
+| Infrastructure | [Vercel/AWS/...] | [Why] |
 | ... | ... | ... |
 
-### Диаграмма архитектуры
+### Architecture diagram
 
 ```mermaid
 graph TD
-    U[Пользователь] --> FE[Frontend]
+    U[User] --> FE[Frontend]
     FE --> API[Backend API]
-    API --> DB[(База данных)]
-    API --> EXT[Внешние сервисы]
+    API --> DB[(Database)]
+    API --> EXT[External services]
 ```
 
-[Адаптируй диаграмму под конкретный проект — покажи основные компоненты и потоки данных]
+[Adapt the diagram to the specific project — show the main components and data flows]
 
-### Интеграции
-| Сервис | Назначение | Критичность |
-|--------|-----------|-------------|
-| [Stripe/Auth0/...] | [Зачем] | Обязательно / Желательно |
+### Integrations
+| Service | Purpose | Criticality |
+|---------|---------|-------------|
+| [Stripe/Auth0/...] | [Why] | Required / Desired |
 
 ---
 
-## 4. Пользовательские сценарии (ключевые)
+## 4. User scenarios (key)
 
-### Сценарий 1: [Название — основной happy path]
-1. Пользователь ...
-2. Система ...
-3. Результат: ...
+### Scenario 1: [Name — main happy path]
+1. User ...
+2. System ...
+3. Result: ...
 
-### Сценарий 2: [Название]
+### Scenario 2: [Name]
 1. ...
 
-[2-4 ключевых сценария, покрывающих основные фичи]
+[2-4 key scenarios covering the main features]
 
 ---
 
 ## 5. Roadmap
 
-### Фаза 1: MVP (оценка: X недель)
-**Цель:** [Что должен уметь MVP]
+### Phase 1: MVP (estimate: X weeks)
+**Goal:** [What the MVP must do]
 
-- [ ] **F1**: [Возможность] → `/create-spec F1-название`
-- [ ] **F2**: [Возможность] → `/create-spec F2-название`
-- [ ] **Инфраструктура**: базовый деплой, CI/CD
+- [ ] **F1**: [Capability] → `/create-spec F1-name`
+- [ ] **F2**: [Capability] → `/create-spec F2-name`
+- [ ] **Infrastructure**: basic deploy, CI/CD
 
-### Фаза 2: [Название] (оценка: X недель)
-**Цель:** [Что добавляем]
+### Phase 2: [Name] (estimate: X weeks)
+**Goal:** [What we add]
 
-- [ ] **F3**: [Возможность] → `/create-spec F3-название`
-- [ ] **F4**: [Возможность] → `/create-spec F4-название`
+- [ ] **F3**: [Capability] → `/create-spec F3-name`
+- [ ] **F4**: [Capability] → `/create-spec F4-name`
 
-### Фаза 3: [Название] (оценка: X недель)
-**Цель:** [Что добавляем]
+### Phase 3: [Name] (estimate: X weeks)
+**Goal:** [What we add]
 
 - [ ] ...
 
-### Визуализация roadmap
+### Roadmap visualization
 
 ```mermaid
 gantt
-    title Roadmap проекта
+    title Project roadmap
     dateFormat YYYY-MM-DD
-    section Фаза 1: MVP
-        F1 Название        :a1, YYYY-MM-DD, Xw
-        F2 Название        :a2, after a1, Xw
-    section Фаза 2
-        F3 Название        :b1, after a2, Xw
-        F4 Название        :b2, after b1, Xw
+    section Phase 1: MVP
+        F1 Name        :a1, YYYY-MM-DD, Xw
+        F2 Name        :a2, after a1, Xw
+    section Phase 2
+        F3 Name        :b1, after a2, Xw
+        F4 Name        :b2, after b1, Xw
 ```
 
 ---
 
-## 6. Ограничения и риски
+## 6. Constraints and risks
 
-### Ограничения
-| Тип | Описание |
-|-----|----------|
-| Сроки | [Дедлайны] |
-| Бюджет | [Ограничения] |
-| Команда | [Размер, компетенции] |
-| Техническое | [Платформы, совместимость] |
+### Constraints
+| Type | Description |
+|------|-------------|
+| Timeline | [Deadlines] |
+| Budget | [Limits] |
+| Team | [Size, competencies] |
+| Technical | [Platforms, compatibility] |
 | Compliance | [GDPR, PCI DSS, ...] |
 
-### Риски
+### Risks
 
-| Риск | Вероятность | Влияние | Митигация |
-|------|-------------|---------|-----------|
-| [Описание] | Низкая/Средняя/Высокая | Низкое/Среднее/Высокое | [Что делать] |
-
----
-
-## 7. Аналоги и позиционирование
-
-| Продукт | Что берём | Чем отличаемся |
-|---------|-----------|----------------|
-| [Аналог 1] | [Удачные решения] | [Наше отличие] |
-| [Аналог 2] | [Удачные решения] | [Наше отличие] |
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| [Description] | Low/Medium/High | Low/Medium/High | [What to do] |
 
 ---
 
-## 8. Критерии успеха MVP
+## 7. Analogs and positioning
 
-- [ ] [Конкретная метрика или качественный критерий]
-- [ ] [Конкретная метрика или качественный критерий]
-- [ ] [Конкретная метрика или качественный критерий]
+| Product | What we borrow | How we differ |
+|---------|----------------|---------------|
+| [Analog 1] | [Successful solutions] | [Our difference] |
+| [Analog 2] | [Successful solutions] | [Our difference] |
 
 ---
 
-## 9. Отложенные вопросы
+## 8. MVP success criteria
 
-> Сюда — **только** осознанно отложенные в Фазе 3.5. Пустая секция = норма.
-> Размытых `- [ ] обсудить X` в утверждённом брифе быть не должно.
+- [ ] [Concrete metric or qualitative criterion]
+- [ ] [Concrete metric or qualitative criterion]
+- [ ] [Concrete metric or qualitative criterion]
 
-| Вопрос | Почему отложено | Когда нужен ответ | Кто решает |
-|--------|-----------------|-------------------|------------|
-| [Вопрос] | [Обоснование] | До /create-spec X / перед v1.0 / ... | Пользователь / архитектор / ... |
+---
 
-## 10. Решения по брифу
+## 9. Deferred questions
 
-> История архитектурных решений верхнего уровня (Q→A пары из Фазы 3.5). Используется как контекст для всех последующих `/create-spec`.
+> Only **consciously** deferred items from Phase 3.5 go here. Empty section = normal.
+> Vague `- [ ] discuss X` entries must not exist in an approved brief.
 
-| # | Вопрос | Решение | Дата |
-|---|--------|---------|------|
-| BD-001 | [Какой был вопрос] | [Что выбрали и почему] | YYYY-MM-DD |
+| Question | Why deferred | When the answer is needed | Who decides |
+|----------|--------------|---------------------------|-------------|
+| [Question] | [Rationale] | Before /create-spec X / before v1.0 / ... | User / architect / ... |
+
+## 10. Brief decisions
+
+> History of top-level architectural decisions (Q→A pairs from Phase 3.5). Used as context for all subsequent `/create-spec` runs.
+
+| # | Question | Decision | Date |
+|---|----------|----------|------|
+| BD-001 | [What was the question] | [What we chose and why] | YYYY-MM-DD |
 | BD-002 | ... | ... | ... |
 
 ---
 
-## Следующие шаги
+## Next steps
 
-1. Утвердить бриф
-2. Для каждого элемента roadmap Фазы 1 создать спецификацию: `/create-spec <название-фичи>`
-3. Для каждой спецификации создать план: `/create-spec-plan <путь-к-спеке>`
-4. Реализация по фазам: `/create-spec-implement <путь-к-плану>`
+1. Approve the brief
+2. For each Phase 1 roadmap item, create a specification: `/create-spec <feature-name>`
+3. For each specification, create a plan: `/create-spec-plan <path-to-spec>`
+4. Phase-by-phase implementation: `/create-spec-implement <path-to-plan>`
 ```
 
-### Правила генерации:
+### Generation rules:
 
-1. **Верхний уровень** — бриф описывает проект ЦЕЛИКОМ, не углубляясь в детали отдельных фич
-2. **Mermaid-диаграммы** — архитектура + Gantt roadmap обязательны
-3. **Каждая фича → будущая спека** — в roadmap каждый элемент ссылается на `/create-spec`
-4. **Обоснование стека** — не просто список, а ПОЧЕМУ выбрана каждая технология
-5. **Конкретные сроки** — если пользователь дал горизонт, рассчитай примерные даты
-6. **Реалистичность** — scope MVP должен быть достижимым
-7. **Язык бизнеса** — никакого кода, только концепции и решения
-8. **Закрытые вопросы → секция 10** (Решения по брифу), **отложенные → секция 9** (с обоснованием). Незакрытых-без-обоснования в финальном брифе быть не должно.
+1. **Top level** — the brief describes the project AS A WHOLE, without diving into individual feature details
+2. **Mermaid diagrams** — architecture + Gantt roadmap are required
+3. **Each feature → future spec** — in the roadmap, each item links to `/create-spec`
+4. **Stack rationale** — not just a list, but WHY each technology was chosen
+5. **Concrete timelines** — if the user gave a horizon, calculate approximate dates
+6. **Realism** — MVP scope must be achievable
+7. **Business language** — no code, only concepts and decisions
+8. **Closed questions → section 10** (Brief decisions), **deferred → section 9** (with rationale). Nothing left open-without-rationale should remain in the final brief.
 
 ---
 
-## ФАЗА 5: Согласование
+## PHASE 5: Approval
 
-1. **Самопроверка** (МОЛЧА): в шаблоне секция «9. Отложенные вопросы» содержит только записи с заполненными `Почему отложено` и `Когда нужен ответ`. «Решения по брифу» отражают все Q→A из Фазы 3.5. Никаких `- [ ] обсудить ...` без обоснования. Если что-то нарушено — вернись в Фазу 3.5.
+1. **Self-check** (SILENT): the template's section "9. Deferred questions" contains only entries with filled-in `Why deferred` and `When the answer is needed`. "Brief decisions" reflect all Q→A pairs from Phase 3.5. No `- [ ] discuss ...` without rationale. If anything is violated — go back to Phase 3.5.
 
-2. Покажи краткую сводку:
+2. Show a brief summary:
    ```
-   📋 Бриф проекта: [Название]
+   📋 Project Brief: [Name]
 
-   Видение: [1 предложение]
-   Фич в scope: X (Must: Y, Should: Z)
-   Стек: [Frontend] + [Backend] + [DB]
-   Фаз в roadmap: N
-   Оценка MVP: ~X недель
+   Vision: [1 sentence]
+   Features in scope: X (Must: Y, Should: Z)
+   Stack: [Frontend] + [Backend] + [DB]
+   Phases in roadmap: N
+   MVP estimate: ~X weeks
 
-   Решений зафиксировано: N (секция 10)
-   Отложено вопросов: M (секция 9)
+   Decisions recorded: N (section 10)
+   Questions deferred: M (section 9)
 
-   Ключевые решения:
-   - [Решение 1]
-   - [Решение 2]
+   Key decisions:
+   - [Decision 1]
+   - [Decision 2]
    ```
 
-3. Спроси: **"Бриф готов. Принять, или нужны правки?"**
-   - Правки → внеси и покажи снова
-   - Принять → сохрани файл
+3. Ask: **"Brief is ready. Accept, or do you want changes?"**
+   - Changes → apply them and show again
+   - Accept → save the file
 
-3. После сохранения выведи:
+3. After saving, output:
    ```
-   ✅ Бриф сохранён: docs/PROJECT-BRIEF.md
+   ✅ Brief saved: docs/PROJECT-BRIEF.md
 
-   Pipeline проекта:
-     ✅ /create-brief → бриф (HLD + roadmap) ← ВЫ ЗДЕСЬ
-     ⬜ /create-spec <фича> → спецификации (по каждой фиче из roadmap)
-     ⬜ /create-spec-plan → планы реализации
-     ⬜ /create-spec-implement → реализация
-     ⬜ /create-spec-review → ретроспектива
+   Project pipeline:
+     ✅ /create-brief → brief (HLD + roadmap) ← YOU ARE HERE
+     ⬜ /create-spec <feature> → specifications (per roadmap feature)
+     ⬜ /create-spec-plan → implementation plans
+     ⬜ /create-spec-implement → implementation
+     ⬜ /create-spec-review → retrospective
 
-   → Следующий шаг: `/create-spec <название-первой-фичи-из-roadmap>`
+   → Next step: `/create-spec <name-of-first-feature-from-roadmap>`
    ```
 
 ---
 
-## ДОПОЛНИТЕЛЬНО: Инициализация структуры проекта (если greenfield)
+## EXTRA: Project structure initialization (if greenfield)
 
-Если проект новый (пустая директория), после сохранения брифа предложи:
+If the project is new (empty directory), after saving the brief offer:
 
 ```
-Проект пока пуст. Хотите инициализировать базовую структуру?
-- docs/ (уже создана)
-- docs/specs/ (для спецификаций)
-- docs/plans/ (для планов)
-- README.md (на основе брифа)
-- .gitignore (под выбранный стек)
+The project is empty. Do you want to initialize the basic structure?
+- docs/ (already created)
+- docs/specs/ (for specifications)
+- docs/plans/ (for plans)
+- README.md (based on the brief)
+- .gitignore (for the chosen stack)
 ```
 
-**Создавай структуру только после подтверждения пользователя.**
+**Create the structure only after user confirmation.**

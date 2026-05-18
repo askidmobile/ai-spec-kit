@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Парсер и менеджер задач для TASKS.md.
-Читает markdown-таблицы, возвращает JSON.
-Обновляет статусы, добавляет и архивирует задачи.
+Parser and manager for TASKS.md.
 
-Использование:
-    python3 tasks.py list                          # Все задачи (active + backlog)
-    python3 tasks.py active                        # Только активные
-    python3 tasks.py backlog                       # Только backlog
-    python3 tasks.py show T-001                    # Детали задачи
-    python3 tasks.py update T-001 "✅ Готово"      # Обновить статус
-    python3 tasks.py add "Название" "path.md"      # Добавить задачу в Active
-    python3 tasks.py add-backlog "Название" "path.md" "Примечание"
-    python3 tasks.py archive T-001                 # Переместить в архив
-    python3 tasks.py next-id                       # Показать следующий свободный ID
+Reads markdown tables, returns JSON. Updates statuses, adds and archives tasks.
+
+Usage:
+    python3 tasks.py list                          # All tasks (active + backlog)
+    python3 tasks.py active                        # Active only
+    python3 tasks.py backlog                       # Backlog only
+    python3 tasks.py show T-001                    # Task details
+    python3 tasks.py update T-001 "✅ Done"        # Update status
+    python3 tasks.py add "Title" "path.md"         # Add to Active
+    python3 tasks.py add-backlog "Title" "path.md" "Note"
+    python3 tasks.py archive T-001                 # Move to archive
+    python3 tasks.py next-id                       # Next free ID
 """
 
 import json
@@ -25,7 +25,7 @@ from typing import Optional
 
 
 def find_tasks_md() -> str:
-    """Находит TASKS.md — ищет от текущей директории вверх."""
+    """Find TASKS.md — walks up from the current directory."""
     current = os.getcwd()
     while True:
         candidate = os.path.join(current, "TASKS.md")
@@ -35,14 +35,14 @@ def find_tasks_md() -> str:
         if parent == current:
             break
         current = parent
-    # Фоллбэк: рядом со скриптом
+    # Fallback: next to the script
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Поднимаемся: scripts/ -> task-tracker/ -> skills/ -> .claude/ -> корень
+    # scripts/ -> task-tracker/ -> skills/ -> .claude/ -> project root
     root = os.path.normpath(os.path.join(script_dir, "..", "..", "..", ".."))
     candidate = os.path.join(root, "TASKS.md")
     if os.path.isfile(candidate):
         return candidate
-    print(json.dumps({"error": "TASKS.md не найден"}))
+    print(json.dumps({"error": "TASKS.md not found"}))
     sys.exit(1)
 
 
@@ -57,7 +57,7 @@ def write_file(path: str, content: str):
 
 
 def parse_table_row(row: str) -> list[str]:
-    """Парсит строку markdown-таблицы в список ячеек."""
+    """Parse a markdown table row into a list of cells."""
     cells = row.strip().strip("|").split("|")
     return [c.strip() for c in cells]
 
@@ -66,8 +66,8 @@ def parse_section(
     content: str, header_pattern: str
 ) -> tuple[list[str], list[list[str]], int, int]:
     """
-    Парсит секцию таблицы из markdown.
-    Возвращает: (заголовки, строки_данных, start_line_index, end_line_index)
+    Parse a markdown table section.
+    Returns: (headers, data_rows, start_line_index, end_line_index)
     """
     lines = content.split("\n")
     headers = []
@@ -85,30 +85,30 @@ def parse_section(
 
         if in_section:
             stripped = line.strip()
-            # Новая секция ## — конец текущей
+            # New ## section — end of current
             if stripped.startswith("## ") and table_started:
                 end_idx = i
                 break
 
-            # Строка таблицы
+            # Table row
             if stripped.startswith("|"):
                 if not table_started:
-                    # Первая строка — заголовки
+                    # First line — headers
                     headers = parse_table_row(stripped)
                     table_started = True
                     start_idx = i
                     continue
                 elif not separator_skipped:
-                    # Вторая строка — разделитель (|---|---|)
+                    # Second line — separator (|---|---|)
                     separator_skipped = True
                     continue
                 else:
-                    # Строки данных
+                    # Data rows
                     row = parse_table_row(stripped)
                     rows.append(row)
                     end_idx = i + 1
             elif table_started and stripped == "":
-                # Пустая строка после таблицы — конец
+                # Blank line after the table — end
                 end_idx = i
                 break
 
@@ -116,10 +116,10 @@ def parse_section(
 
 
 def parse_tasks(content: str) -> dict:
-    """Парсит все секции TASKS.md."""
-    # Активные задачи
+    """Parse all sections of TASKS.md."""
+    # Active tasks
     active_headers, active_rows, _, _ = parse_section(
-        content, r"^##\s+🚀\s+Активные задачи"
+        content, r"^##\s+🚀\s+Active tasks"
     )
 
     # Backlog
@@ -132,18 +132,18 @@ def parse_tasks(content: str) -> dict:
             val = row[idx] if idx < len(row) else ""
             if key == "id":
                 task["id"] = val
-            elif key == "дата":
+            elif key == "date":
                 task["date"] = val
-            elif key == "задача":
+            elif key == "task":
                 task["title"] = val
-            elif key == "план":
+            elif key == "plan":
                 task["plan"] = val
-                # Извлекаем путь из markdown ссылки
+                # Extract path from a markdown link
                 link_match = re.search(r"\[.*?\]\((.*?)\)", val)
                 task["plan_path"] = link_match.group(1) if link_match else ""
-            elif key == "статус":
+            elif key == "status":
                 task["status"] = val
-            elif key == "примечание":
+            elif key == "note":
                 task["note"] = val
         return task
 
@@ -161,7 +161,7 @@ def parse_tasks(content: str) -> dict:
 
 
 def get_next_id(content: str) -> str:
-    """Находит следующий свободный ID."""
+    """Find the next free ID."""
     ids = re.findall(r"T-(\d+)", content)
     if not ids:
         return "T-001"
@@ -170,16 +170,16 @@ def get_next_id(content: str) -> str:
 
 
 def update_task_status(content: str, task_id: str, new_status: str) -> str:
-    """Обновляет статус задачи по ID."""
+    """Update a task's status by ID."""
     lines = content.split("\n")
     updated = False
     for i, line in enumerate(lines):
         if f"| {task_id} |" in line or f"| {task_id.strip()} |" in line:
             cells = parse_table_row(line)
-            # Определяем секцию по количеству колонок и наличию "Статус"
-            # Active: ID | Дата | Задача | План | Статус
-            # Backlog: ID | Дата | Задача | План | Примечание
-            # Статус — последняя колонка в Active (индекс 4)
+            # Identify by column count.
+            # Active: ID | Date | Task | Plan | Status
+            # Backlog: ID | Date | Task | Plan | Note
+            # Status is the last column in Active (index 4).
             if len(cells) >= 5:
                 cells[4] = new_status
                 lines[i] = "| " + " | ".join(cells) + " |"
@@ -194,7 +194,7 @@ def update_task_status(content: str, task_id: str, new_status: str) -> str:
 def add_task(
     content: str, title: str, plan_path: str, section: str = "active", note: str = ""
 ) -> tuple[str, str]:
-    """Добавляет новую задачу в указанную секцию."""
+    """Add a new task to the given section."""
     next_id = get_next_id(content)
     today = date.today().strftime("%Y-%m-%d")
 
@@ -205,9 +205,8 @@ def add_task(
         plan_cell = "—"
 
     if section == "active":
-        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | 📝 Планирование |"
-        # Ищем конец таблицы активных задач
-        pattern = r"^##\s+🚀\s+Активные задачи"
+        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | 📝 Planning |"
+        pattern = r"^##\s+🚀\s+Active tasks"
     else:
         note_text = note if note else ""
         new_row = f"| {next_id} | {today} | {title} | {plan_cell} | {note_text} |"
@@ -240,8 +239,7 @@ def add_task(
 
 
 def archive_task(content: str, task_id: str) -> tuple[str, str]:
-    """Перемещает задачу из Active в архив текущей даты."""
-    # Находим задачу
+    """Move a task from Active to today's archive section."""
     lines = content.split("\n")
     task_line = None
     task_line_idx = -1
@@ -251,7 +249,7 @@ def archive_task(content: str, task_id: str) -> tuple[str, str]:
         if f"| {task_id} |" in line:
             cells = parse_table_row(line)
             if len(cells) >= 4:
-                task_title = cells[2]  # Задача
+                task_title = cells[2]  # Task title
                 task_line = line
                 task_line_idx = i
             break
@@ -259,14 +257,11 @@ def archive_task(content: str, task_id: str) -> tuple[str, str]:
     if task_line_idx < 0:
         return "", ""
 
-    # Удаляем строку из таблицы
     lines.pop(task_line_idx)
 
-    # Находим или создаём секцию архива с текущей датой
     today = date.today().strftime("%Y-%m-%d")
-    archive_header = f"## ✅ Архивировано {today}"
+    archive_header = f"## ✅ Archived {today}"
 
-    # Ищем существующую секцию архива с этой датой
     archive_idx = -1
     for i, line in enumerate(lines):
         if archive_header in line:
@@ -274,18 +269,16 @@ def archive_task(content: str, task_id: str) -> tuple[str, str]:
             break
 
     if archive_idx < 0:
-        # Ищем первую секцию "✅ Архивировано" и вставляем перед ней
+        # Find the first "✅ Archived" section and insert before it
         for i, line in enumerate(lines):
-            if line.strip().startswith("## ✅ Архивировано"):
+            if line.strip().startswith("## ✅ Archived"):
                 archive_idx = i
-                # Вставляем новую секцию перед существующей
                 archive_entry = f"\n{archive_header}\n\n- {task_title} ({task_id})\n"
                 lines.insert(archive_idx, archive_entry)
                 break
 
     else:
-        # Секция уже есть — добавляем запись после заголовка
-        # Ищем конец списка в этой секции
+        # Section exists — append below its header
         insert_at = archive_idx + 1
         while insert_at < len(lines):
             stripped = lines[insert_at].strip()
@@ -339,7 +332,7 @@ def cmd_show(tasks_path: str, task_id: str):
     found = [t for t in all_tasks if t.get("id") == task_id]
 
     if not found:
-        print(json.dumps({"error": f"Задача {task_id} не найдена"}, ensure_ascii=False))
+        print(json.dumps({"error": f"Task {task_id} not found"}, ensure_ascii=False))
         sys.exit(1)
 
     print(json.dumps(found[0], ensure_ascii=False, indent=2))
@@ -350,7 +343,7 @@ def cmd_update(tasks_path: str, task_id: str, new_status: str):
     updated = update_task_status(content, task_id, new_status)
 
     if not updated:
-        print(json.dumps({"error": f"Задача {task_id} не найдена"}, ensure_ascii=False))
+        print(json.dumps({"error": f"Task {task_id} not found"}, ensure_ascii=False))
         sys.exit(1)
 
     write_file(tasks_path, updated)
@@ -360,7 +353,7 @@ def cmd_update(tasks_path: str, task_id: str, new_status: str):
                 "success": True,
                 "task_id": task_id,
                 "new_status": new_status,
-                "message": f"Статус {task_id} обновлён на: {new_status}",
+                "message": f"Status of {task_id} updated to: {new_status}",
             },
             ensure_ascii=False,
             indent=2,
@@ -385,7 +378,7 @@ def cmd_add(
                 "task_id": new_id,
                 "title": title,
                 "section": section,
-                "message": f"Задача {new_id} добавлена в {section}: {title}",
+                "message": f"Task {new_id} added to {section}: {title}",
             },
             ensure_ascii=False,
             indent=2,
@@ -398,7 +391,7 @@ def cmd_archive(tasks_path: str, task_id: str):
     updated, title = archive_task(content, task_id)
 
     if not updated:
-        print(json.dumps({"error": f"Задача {task_id} не найдена"}, ensure_ascii=False))
+        print(json.dumps({"error": f"Task {task_id} not found"}, ensure_ascii=False))
         sys.exit(1)
 
     write_file(tasks_path, updated)
@@ -408,7 +401,7 @@ def cmd_archive(tasks_path: str, task_id: str):
                 "success": True,
                 "task_id": task_id,
                 "title": title,
-                "message": f"Задача {task_id} перемещена в архив",
+                "message": f"Task {task_id} moved to archive",
             },
             ensure_ascii=False,
             indent=2,
@@ -427,7 +420,7 @@ def main():
         print(
             json.dumps(
                 {
-                    "error": "Укажите команду: list, active, backlog, show, update, add, add-backlog, archive, next-id"
+                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, next-id"
                 },
                 ensure_ascii=False,
             )
@@ -445,7 +438,7 @@ def main():
         if len(sys.argv) < 3:
             print(
                 json.dumps(
-                    {"error": "Укажите ID задачи: show T-001"}, ensure_ascii=False
+                    {"error": "Specify a task ID: show T-001"}, ensure_ascii=False
                 )
             )
             sys.exit(1)
@@ -455,7 +448,7 @@ def main():
         if len(sys.argv) < 4:
             print(
                 json.dumps(
-                    {"error": "Укажите ID и статус: update T-001 '✅ Готово'"},
+                    {"error": "Specify ID and status: update T-001 '✅ Done'"},
                     ensure_ascii=False,
                 )
             )
@@ -466,7 +459,7 @@ def main():
         if len(sys.argv) < 3:
             print(
                 json.dumps(
-                    {"error": "Укажите название: add 'Название' ['plan.md']"},
+                    {"error": "Specify a title: add 'Title' ['plan.md']"},
                     ensure_ascii=False,
                 )
             )
@@ -480,7 +473,7 @@ def main():
             print(
                 json.dumps(
                     {
-                        "error": "Укажите название: add-backlog 'Название' ['plan.md'] ['Примечание']"
+                        "error": "Specify a title: add-backlog 'Title' ['plan.md'] ['Note']"
                     },
                     ensure_ascii=False,
                 )
@@ -495,7 +488,7 @@ def main():
         if len(sys.argv) < 3:
             print(
                 json.dumps(
-                    {"error": "Укажите ID задачи: archive T-001"}, ensure_ascii=False
+                    {"error": "Specify a task ID: archive T-001"}, ensure_ascii=False
                 )
             )
             sys.exit(1)
@@ -506,7 +499,7 @@ def main():
 
     else:
         print(
-            json.dumps({"error": f"Неизвестная команда: {command}"}, ensure_ascii=False)
+            json.dumps({"error": f"Unknown command: {command}"}, ensure_ascii=False)
         )
         sys.exit(1)
 

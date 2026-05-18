@@ -1,249 +1,249 @@
 ---
-description: Ретроспектива после реализации. Сравнивает план vs реальность, генерирует секцию Ретроспектива в плане, обновляет статусы спеки и TASKS.md. Описывает ЧТО ПОЛУЧИЛОСЬ.
+description: Post-implementation retrospective. Compares plan vs reality, generates a Retrospective section in the plan, updates spec and TASKS.md statuses. Describes WHAT WE ENDED UP WITH.
 allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(date *), Bash(find *), Bash(git *), Write, Edit, TodoWrite, AskUserQuestion
-argument-hint: <путь-к-плану-или-название>
+argument-hint: <path-to-plan-or-name>
 ---
 
-# Ретроспектива реализации (REVIEW)
+# Implementation Retrospective (REVIEW)
 
-Ты — техлид, проводящий ретроспективу. Твоя задача — сравнить план с реальностью и зафиксировать результаты: **$ARGUMENTS**
+You are a tech lead running a retrospective. Your task is to compare the plan with reality and record the results: **$ARGUMENTS**
 
-> **Ретроспектива = план vs реальность. Что получилось, что отклонилось, какие уроки.**
-> Этот скил НЕ меняет код — только документацию.
+> **Retrospective = plan vs reality. What was achieved, what diverged, what lessons.**
+> This skill does NOT change code — only documentation.
 
 ---
 
-## ФАЗА 1: Разведка (МОЛЧА, без вывода)
+## PHASE 1: Recon (SILENT, no output)
 
-### 1.1. Найти план
+### 1.1. Find the plan
 
-Если `$ARGUMENTS` — путь к файлу → прочитай его.
-Если `$ARGUMENTS` — название → найди:
+If `$ARGUMENTS` is a file path → read it.
+If `$ARGUMENTS` is a name → find it:
 ```
 Glob: docs/plans/*$ARGUMENTS*
 ```
-Если не найден → покажи список: `ls docs/plans/` и предложи выбрать.
+If not found → show the list: `ls docs/plans/` and let the user pick.
 
-### 1.2. Найти связанную спеку
+### 1.2. Find the linked spec
 
-Прочитай поле `**Спецификация:**` в плане → загрузи спеку из `docs/specs/`.
+Read the `**Specification:**` field in the plan → load the spec from `docs/specs/`.
 
-### 1.3. Найти трекер задач
+### 1.3. Find the task tracker
 
-Проверь TASKS.md — есть ли записи, связанные с этим планом/спекой.
+Check TASKS.md — are there entries related to this plan/spec.
 
-### 1.4. Финальная проверка незакрытых вопросов
+### 1.4. Final check of unresolved questions
 
-Прочитай в плане и спеке секции «Отложенные вопросы». Для каждой записи определи статус:
+Read the "Deferred questions" sections in both the plan and the spec. For each entry determine the status:
 
-- **Можно закрыть сейчас** — реализация дала ответ (стало понятно по факту работы кода) → задай через `AskUserQuestion` подтверждение «закрыть как X?» с 2-3 вариантами (см. [правила интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок)). После ответа — перенеси в «Решения».
-- **Действительно остаётся отложенным** — ответ всё ещё не нужен (например `Когда нужен ответ` = «v2»). Оставь в «Отложенные», в ретроспективе зафиксируй.
-- **Должен был быть закрыт, но забыт** — это **процессный долг**. Спроси пользователя:
-  - вариант A: закрыть сейчас (с твоей рекомендацией);
-  - вариант B: явно перенести в следующий цикл (создать запись в TASKS.md / новой спеке);
-  - вариант C: отметить как «уже неактуально».
+- **Can be closed now** — implementation gave the answer (it became clear from how the code works in practice) → ask via `AskUserQuestion` to confirm "close as X?" with 2-3 options (see [interactive questions rules](#interactive-questions-rules-shared-block)). After the answer — move to "Decisions".
+- **Genuinely still deferred** — the answer is still not needed (e.g. `When the answer is needed` = "v2"). Keep in "Deferred", record it in the retrospective.
+- **Should have been closed but was forgotten** — this is **process debt**. Ask the user:
+  - option A: close it now (with your recommendation);
+  - option B: explicitly carry over to the next cycle (create an entry in TASKS.md / a new spec);
+  - option C: mark as "no longer relevant".
 
-Все изменения отрази в файлах плана/спеки **до** генерации ретроспективы.
-
----
-
-## ФАЗА 2: Анализ реализации (МОЛЧА, без вывода)
-
-### 2.1. Коммиты
-
-Найди коммиты, связанные с реализацией:
-- По T-XXX тегу задачи: `git log --oneline --grep="T-XXX"`
-- По файлам из плана: `git log --oneline -- path/to/file`
-- По временному диапазону: от даты плана до сейчас
-
-Для ключевых коммитов — `git show --stat <hash>` чтобы увидеть изменённые файлы.
-
-### 2.2. Плановые vs фактические файлы
-
-Сравни:
-- **Плановые файлы** — все `path/to/file` из чеклистов фаз
-- **Фактические файлы** — файлы из коммитов
-
-Определи:
-- Какие плановые файлы были изменены ✅
-- Какие плановые файлы НЕ были затронуты ❌
-- Какие файлы были изменены ВОПРЕКИ плану (незапланированные) ⚠️
-
-### 2.3. Статус чеклистов
-
-Пройди по всем фазам плана, подсчитай: `[x]` vs `[ ]` по каждой фазе.
+Reflect all changes in the plan/spec files **before** generating the retrospective.
 
 ---
 
-## ФАЗА 3: Сравнение (МОЛЧА, без вывода)
+## PHASE 2: Implementation analysis (SILENT, no output)
 
-### 3.1. Таблица отклонений
+### 2.1. Commits
 
-Для каждой фазы:
-- Оценка часов vs фактическое время (если можно определить по коммитам)
-- Запланированные задачи vs фактически выполненные
-- Добавленные задачи (не было в плане)
-- Пропущенные задачи (были в плане, не выполнены)
+Find the commits related to implementation:
+- By the T-XXX task tag: `git log --oneline --grep="T-XXX"`
+- By files from the plan: `git log --oneline -- path/to/file`
+- By time range: from the plan's date to now
 
-### 3.2. Покрытие требований
+For key commits — `git show --stat <hash>` to see changed files.
 
-По таблице "Трейсабельность: Требования → Задачи" из плана:
-- Какие FR-XXX полностью реализованы
-- Какие FR-XXX частично реализованы
-- Какие FR-XXX не реализованы
+### 2.2. Planned vs actual files
 
-### 3.3. Паттерны
+Compare:
+- **Planned files** — all `path/to/file` entries from phase checklists
+- **Actual files** — files from commits
 
-Определи повторяющиеся паттерны:
-- Систематические недооценки/переоценки
-- Типичные причины отклонений
-- Незапланированная работа — что её вызвало
+Determine:
+- Which planned files were changed ✅
+- Which planned files were NOT touched ❌
+- Which files were changed CONTRARY to the plan (unplanned) ⚠️
 
----
+### 2.3. Checklist status
 
-## Правила интерактивных вопросов (общий блок)
-
-При закрытии вопросов через `AskUserQuestion` в Фазе 1.4:
-
-- **Один вопрос = один tool call** (массив `questions` длины 1).
-- **2-4 варианта** + автоматический Other.
-- **Контекст в вопросе**: процитируй формулировку из секции «Отложенные вопросы» + кратко что фактически реализовалось.
-- **Label короткий** (1-5 слов), **description** объясняет, как ответ повлияет на статус и куда запишется (в «Решения», в TASKS.md, или останется отложенным).
-- **Рекомендация** — первой опцией с `(Рекомендуется)`, если по факту реализации ответ очевиден.
+Walk through every plan phase, count: `[x]` vs `[ ]` per phase.
 
 ---
 
-## ФАЗА 4: Генерация ретроспективы
+## PHASE 3: Comparison (SILENT, no output)
 
-Добавь в конец файла плана новую секцию:
+### 3.1. Deviations table
+
+For each phase:
+- Hour estimate vs actual time (if determinable from commits)
+- Planned tasks vs tasks actually done
+- Added tasks (not in the plan)
+- Skipped tasks (in the plan, not done)
+
+### 3.2. Requirements coverage
+
+By the "Traceability: Requirements → Tasks" table from the plan:
+- Which FR-XXX are fully implemented
+- Which FR-XXX are partially implemented
+- Which FR-XXX are not implemented
+
+### 3.3. Patterns
+
+Identify recurring patterns:
+- Systematic under/over-estimates
+- Typical causes of deviations
+- Unplanned work — what caused it
+
+---
+
+## Interactive questions rules (shared block)
+
+When closing questions via `AskUserQuestion` in Phase 1.4:
+
+- **One question = one tool call** (`questions` array of length 1).
+- **2-4 options** + automatic Other.
+- **Context in the question**: quote the wording from "Deferred questions" + a brief note of what actually got implemented.
+- **Short label** (1-5 words), **description** explains how the answer will affect status and where it will be recorded (in "Decisions", in TASKS.md, or stays deferred).
+- **Recommendation** — first option with `(Recommended)`, if the answer is obvious based on the actual implementation.
+
+---
+
+## PHASE 4: Retrospective generation
+
+Append a new section at the end of the plan file:
 
 ```markdown
 ---
 
-## Ретроспектива
+## Retrospective
 
-**Дата ревью:** YYYY-MM-DD
-**Статус:** ✅ Реализовано / ⚠️ Частично реализовано / ❌ Не реализовано
+**Review date:** YYYY-MM-DD
+**Status:** ✅ Implemented / ⚠️ Partially implemented / ❌ Not implemented
 
-### Сводка
+### Summary
 
-| Метрика | План | Факт |
-|---------|------|------|
-| Фаз | N | N |
-| Задач | XX | YY |
-| Файлов | XX | YY |
-| Оценка (часов) | XX | ~YY |
-| Коммитов | — | ZZ |
+| Metric | Plan | Actual |
+|--------|------|--------|
+| Phases | N | N |
+| Tasks | XX | YY |
+| Files | XX | YY |
+| Estimate (hours) | XX | ~YY |
+| Commits | — | ZZ |
 
-### Коммиты реализации
+### Implementation commits
 
-| Хеш | Описание | Файлов |
-|------|----------|--------|
-| `abc1234` | feat: описание | N |
-| `def5678` | fix: описание | N |
+| Hash | Description | Files |
+|------|-------------|-------|
+| `abc1234` | feat: description | N |
+| `def5678` | fix: description | N |
 
-### Отклонения от плана
+### Deviations from the plan
 
-#### Добавлено (не было в плане)
-- [Что добавилось и почему]
+#### Added (not in the plan)
+- [What was added and why]
 
-#### Пропущено (было в плане, не сделано)
-- [Что пропущено и почему]
+#### Skipped (in the plan, not done)
+- [What was skipped and why]
 
-#### Изменено (сделано иначе)
-- [Что сделано по-другому и почему]
+#### Changed (done differently)
+- [What was done differently and why]
 
-### Покрытие требований
+### Requirements coverage
 
-| Требование | Статус | Комментарий |
-|------------|--------|-------------|
-| FR-001 | ✅ Реализовано | |
-| FR-002 | ⚠️ Частично | [что не покрыто] |
-| FR-003 | ❌ Не реализовано | [причина] |
+| Requirement | Status | Comment |
+|-------------|--------|---------|
+| FR-001 | ✅ Implemented | |
+| FR-002 | ⚠️ Partial | [what is not covered] |
+| FR-003 | ❌ Not implemented | [reason] |
 
-### Уроки
+### Lessons
 
-1. **[Урок]** — [Описание и рекомендация]
-2. **[Урок]** — [Описание и рекомендация]
+1. **[Lesson]** — [Description and recommendation]
+2. **[Lesson]** — [Description and recommendation]
 
-### Рекомендации
+### Recommendations
 
-- [Что улучшить в следующих итерациях]
-- [Технический долг, если появился]
+- [What to improve in future iterations]
+- [Tech debt, if it appeared]
 
-### Закрытие отложенных вопросов
+### Closing deferred questions
 
-> Итог Фазы 1.4 ревью: что стало с записями из «Отложенные вопросы» плана/спеки.
+> Outcome of review Phase 1.4: what happened to the entries from the "Deferred questions" of the plan/spec.
 
-| Вопрос | Решение | Куда зафиксировано |
-|--------|---------|--------------------|
-| [Цитата вопроса] | Закрыт: [ответ] | План → «Решения по плану» PD-NNN |
-| [Цитата вопроса] | Перенесён в v2 | TASKS.md → T-XXX |
-| [Цитата вопроса] | Остался отложенным | План → «Отложенные вопросы» (без изменений) |
+| Question | Decision | Where it was recorded |
+|----------|----------|-----------------------|
+| [Question quote] | Closed: [answer] | Plan → "Plan decisions" PD-NNN |
+| [Question quote] | Moved to v2 | TASKS.md → T-XXX |
+| [Question quote] | Stayed deferred | Plan → "Deferred questions" (unchanged) |
 ```
 
 ---
 
-## ФАЗА 5: Согласование
+## PHASE 5: Approval
 
-Покажи пользователю **одним сообщением**:
+Show the user **in a single message**:
 
 ```
-📊 Ретроспектива: [Название плана]
+📊 Retrospective: [Plan name]
 
-Статус: ✅/⚠️/❌
-Реализовано задач: X/Y
-Коммитов: Z
-Требований покрыто: A/B
+Status: ✅/⚠️/❌
+Tasks done: X/Y
+Commits: Z
+Requirements covered: A/B
 
-Отложенные вопросы:
-  - Закрыто по факту: N
-  - Перенесено в backlog: M
-  - Остаётся отложенным: K
+Deferred questions:
+  - Closed in light of facts: N
+  - Moved to backlog: M
+  - Still deferred: K
 
-Ключевые отклонения:
-- [Кратко — что пошло не по плану]
+Key deviations:
+- [Briefly — what went off plan]
 
-Предлагаю обновить:
-1. План → добавить секцию "Ретроспектива" + статус "✅ Реализовано"
-2. Спека → отметить выполненные критерии успеха
-3. TASKS.md → статус "✅ Готово"
+Proposed updates:
+1. Plan → add "Retrospective" section + status "✅ Implemented"
+2. Spec → mark fulfilled success criteria
+3. TASKS.md → status "✅ Done"
 
-Принять обновления?
+Accept the updates?
 ```
 
-**НЕ ПЕРЕХОДИ ДАЛЬШЕ, пока пользователь не подтвердит.**
+**DO NOT MOVE ON until the user confirms.**
 
 ---
 
-## ФАЗА 6: Обновление статусов
+## PHASE 6: Status updates
 
-После подтверждения:
+After confirmation:
 
-### 6.1. План
-- Добавь секцию "Ретроспектива" (из Фазы 4)
-- Измени `**Статус:**` → `✅ Реализовано` (или `⚠️ Частично реализовано`)
+### 6.1. Plan
+- Add the "Retrospective" section (from Phase 4)
+- Change `**Status:**` → `✅ Implemented` (or `⚠️ Partially implemented`)
 
-### 6.2. Спека
-- Пройди по секции "Критерии успеха" — отметь `[x]` для выполненных
-- Пройди по "Критериям приёмки" в сценариях — отметь `[x]` для выполненных
+### 6.2. Spec
+- Walk through "Success criteria" — mark `[x]` for fulfilled
+- Walk through "Acceptance criteria" in scenarios — mark `[x]` for fulfilled
 
 ### 6.3. TASKS.md
-- Если задача есть в TASKS.md — обнови статус на "✅ Готово"
+- If the task is in TASKS.md — update status to "✅ Done"
 
-### 6.4. Финальный вывод
+### 6.4. Final output
 
 ```
-📋 Ретроспектива завершена!
+📋 Retrospective completed!
 
-Обновлены:
-  ✅ План: docs/plans/[файл] → статус "Реализовано" + секция "Ретроспектива"
-  ✅ Спека: docs/specs/[файл] → критерии успеха отмечены
-  ✅ TASKS.md → задача T-XXX "Готово"
+Updated:
+  ✅ Plan: docs/plans/[file] → status "Implemented" + "Retrospective" section
+  ✅ Spec: docs/specs/[file] → success criteria marked
+  ✅ TASKS.md → task T-XXX "Done"
 
-Pipeline завершён:
-  ✅ /create-spec → спецификация
-  ✅ /create-spec-plan → план реализации
-  ✅ /create-spec-implement → реализация
-  ✅ /create-spec-review → ретроспектива
+Pipeline complete:
+  ✅ /create-spec → specification
+  ✅ /create-spec-plan → implementation plan
+  ✅ /create-spec-implement → implementation
+  ✅ /create-spec-review → retrospective
 ```

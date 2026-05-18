@@ -1,157 +1,157 @@
 ---
-description: Создание детального плана реализации на основе утверждённой спецификации. Анализирует спеку и кодовую базу, проектирует архитектуру, разбивает на фазы с чеклистами. Описывает КАК делаем.
+description: Create a detailed implementation plan based on an approved specification. Analyzes the spec and the codebase, designs the architecture, breaks work into phases with checklists. Describes HOW we do it.
 allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(date *), Bash(find *), Bash(python3 *), Write, Edit, TodoWrite, AskUserQuestion
-argument-hint: <путь-к-спеке-или-название>
+argument-hint: <path-to-spec-or-name>
 ---
 
-# Генератор плана реализации (PLAN)
+# Implementation Plan Generator (PLAN)
 
-Ты — архитектор и техлид. Твоя задача — создать детальный план реализации на основе спецификации: **$ARGUMENTS**
+You are an architect and tech lead. Your task is to create a detailed implementation plan based on a specification: **$ARGUMENTS**
 
-> **План описывает КАК делаем: архитектура, файлы, фазы, чеклисты.**
-> Входные данные — утверждённая спецификация из `docs/specs/`.
+> **The plan describes HOW we do it: architecture, files, phases, checklists.**
+> Input is an approved specification from `docs/specs/`.
 
 ---
 
-## ФАЗА 1: Загрузка и контекст
+## PHASE 1: Load and context
 
-### 1.1. Разведка проекта (МОЛЧА)
+### 1.1. Project recon (SILENT)
 
-Определи контекст:
-1. **Стек** — package.json, Cargo.toml, go.mod, requirements.txt, pyproject.toml и т.д.
-2. **Структура** — `ls` корня, основные директории
-3. **Существующие планы** — проверь `docs/plans/`, `plans/`, `docs/`
-4. **Трекер задач** — TASKS.md, TODO.md, или аналоги. Если есть task-tracker скрипт — используй его для проверки дубликатов
+Determine the context:
+1. **Stack** — package.json, Cargo.toml, go.mod, requirements.txt, pyproject.toml, etc.
+2. **Structure** — `ls` the root, main directories
+3. **Existing plans** — check `docs/plans/`, `plans/`, `docs/`
+4. **Task tracker** — TASKS.md, TODO.md, or equivalents. If a task-tracker script exists — use it to check for duplicates
 
-### 1.2. Найти спецификацию
+### 1.2. Find the specification
 
-Если `$ARGUMENTS` — путь к файлу → прочитай его.
-Если `$ARGUMENTS` — название → найди:
+If `$ARGUMENTS` is a file path → read it.
+If `$ARGUMENTS` is a name → find it:
 ```
 Glob: docs/specs/*$ARGUMENTS*
 ```
-Если не найден → покажи список: `ls docs/specs/` и предложи `/create-spec <название>`.
+If not found → show the list: `ls docs/specs/` and suggest `/create-spec <name>`.
 
-### 1.3. Анализ спецификации
+### 1.3. Spec analysis
 
-Прочитай спеку целиком. Выдели:
-- Все функциональные требования (FR-XXX)
-- Пользовательские сценарии и критерии приёмки
-- Нефункциональные требования
-- Модель данных
-- Scope и ограничения
-- **Отложенные вопросы** (секция «Отложенные вопросы») — те из них, у которых `Когда нужен ответ` = «до плана» или «до фазы N плана», нужно закрыть в Фазе 1.4.
-- **Решения по спеке** — прочитай как контекст (это уже принятые архитектурные выборы, на них опираемся).
+Read the spec in full. Extract:
+- All functional requirements (FR-XXX)
+- User scenarios and acceptance criteria
+- Non-functional requirements
+- Data model
+- Scope and constraints
+- **Deferred questions** (section "Deferred questions") — those whose `When the answer is needed` is "before plan" or "before plan phase N" must be closed in Phase 1.4.
+- **Spec decisions** — read as context (these are already-made architectural choices we build on).
 
-### 1.4. Закрытие унаследованных вопросов из спеки
+### 1.4. Closing inherited questions from the spec
 
-Если в спеке есть отложенные вопросы, которые блокируют план:
+If the spec has deferred questions that block the plan:
 
-1. Выпиши их в очередь.
-2. Задай **по одному** через `AskUserQuestion` — см. [правила интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок).
-3. После каждого ответа **обнови файл спеки**:
-   - Перенеси запись из «Отложенные вопросы» в «Решения по спеке» (`D-NNN | Q | A | YYYY-MM-DD`).
-4. Не переходи к Фазе 2, пока не закрыты все блокирующие.
+1. Write them into a queue.
+2. Ask **one at a time** via `AskUserQuestion` — see [interactive questions rules](#interactive-questions-rules-shared-block).
+3. After each answer **update the spec file**:
+   - Move the entry from "Deferred questions" to "Spec decisions" (`D-NNN | Q | A | YYYY-MM-DD`).
+4. Don't advance to Phase 2 until all blocking ones are closed.
 
-Также проверь **бриф** (`docs/PROJECT-BRIEF.md` или аналог), если на него есть ссылка — там тоже могут быть отложенные вопросы, блокирующие план. Закрой их по тому же протоколу (обновляй бриф).
-
----
-
-## ФАЗА 2: Глубокий анализ кодовой базы (МОЛЧА)
-
-На основе требований из спеки:
-
-### 2.1. Затронутые файлы
-Найди ВСЕ модули, компоненты, сервисы, типы, тесты, которые будут затронуты.
-
-### 2.2. Паттерны проекта
-Изучи аналогичные реализации:
-- Как устроены похожие модули (структура, обработка ошибок)
-- Как организована слоистость (API → сервис → хранилище)
-- Как устроены миграции данных
-- Как организованы тесты
-
-### 2.3. Зависимости
-- Какие пакеты/библиотеки понадобятся
-- Есть ли уже нужные зависимости
+Also check the **brief** (`docs/PROJECT-BRIEF.md` or equivalent), if there's a link to it — it may also contain deferred questions that block the plan. Close them by the same protocol (update the brief).
 
 ---
 
-## ФАЗА 2.5: Выявление и закрытие технических вопросов плана
+## PHASE 2: Deep codebase analysis (SILENT)
 
-> **Цель**: спека описывает ЧТО, план — КАК. На стыке возникают свои развилки. Закрыть их до генерации шаблона, чтобы «Открытые вопросы» в плане не превращались в нерешённый чеклист.
+Based on the spec's requirements:
 
-### 2.5.1. Собери очередь (МОЛЧА)
+### 2.1. Affected files
+Find ALL modules, components, services, types, tests that will be touched.
 
-Типичные источники для плана:
+### 2.2. Project patterns
+Study analogous implementations:
+- How similar modules are organized (structure, error handling)
+- How layering is organized (API → service → storage)
+- How data migrations work
+- How tests are organized
 
-- **Архитектурные развилки**: расширить существующий модуль (coupling) vs создать новый (дублирование); event-driven vs sync calls; in-process vs отдельный сервис.
-- **Стратегия миграции данных**: in-place ALTER vs новая таблица + bulk copy; blocking vs background.
-- **Стратегия отката (rollback)**: feature-flag vs git revert; данные → можно ли откатить?
-- **Разбиение на фазы**: одна большая или 4 маленьких; параллелизуемые vs строго последовательные.
-- **Тестовая стратегия**: что unit-тестами, что интеграционными, что вручную; нужны ли golden / snapshot.
-- **Зависимости**: добавить ли новый пакет (риск supply chain) vs написать самим.
-- **Не покрытые спекой граничные случаи**, которые всплыли при чтении кода.
-
-Пустая очередь → пропусти эту фазу, переходи к Фазе 3.
-
-### 2.5.2. Задавай по одному через AskUserQuestion
-
-Следуй [правилам интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок).
-
-- Один вызов = один вопрос.
-- 2-4 варианта + auto Other.
-- Рекомендация — первой опцией с `(Рекомендуется)`, если есть.
-
-### 2.5.3. Что записываем в план
-
-- **Закрытые вопросы** → в шаблоне новая секция «Решения по плану» (Q→A с датой).
-- **Отложенные** → секция «Отложенные вопросы» с обоснованием.
-- **«Открытых без обоснования»** в утверждённом плане быть не должно.
+### 2.3. Dependencies
+- Which packages/libraries will be needed
+- Whether the required dependencies already exist
 
 ---
 
-## Правила интерактивных вопросов (общий блок)
+## PHASE 2.5: Surfacing and closing technical plan questions
 
-При закрытии вопросов через `AskUserQuestion` соблюдай:
+> **Goal**: the spec describes WHAT, the plan describes HOW. New forks appear at the boundary. Close them before generating the template so "Open questions" in the plan don't turn into an unresolved checklist.
 
-- **Один вопрос = один tool call** (массив `questions` длины 1).
-- **2-4 варианта** ответа + автоматический «Other».
-- **Контекст в вопросе**: 1-2 предложения почему спрашиваешь и как ответ повлияет на план.
-- **Label короткий** (1-5 слов), **description** объясняет последствия выбора (trade-off).
-- **Рекомендация** — первой опцией с `(Рекомендуется)`, если есть обоснованная.
-- **header** — 1-3 слова, чип-метка темы.
-- **Не переходи** к следующей фазе, пока очередь не пуста.
+### 2.5.1. Build the queue (SILENT)
+
+Typical sources for a plan:
+
+- **Architectural forks**: extend an existing module (coupling) vs create a new one (duplication); event-driven vs sync calls; in-process vs separate service.
+- **Data migration strategy**: in-place ALTER vs new table + bulk copy; blocking vs background.
+- **Rollback strategy**: feature flag vs git revert; data → can it be rolled back?
+- **Phase breakdown**: one big or 4 small; parallelizable vs strictly sequential.
+- **Test strategy**: what is unit-tested, what is integration-tested, what is manual; do we need golden / snapshot.
+- **Dependencies**: add a new package (supply-chain risk) vs write it ourselves.
+- **Edge cases not covered by the spec** that surfaced while reading the code.
+
+Empty queue → skip this phase, go to Phase 3.
+
+### 2.5.2. Ask one at a time via AskUserQuestion
+
+Follow the [interactive questions rules](#interactive-questions-rules-shared-block).
+
+- One call = one question.
+- 2-4 options + auto Other.
+- Recommendation — first option with `(Recommended)`, if there is one.
+
+### 2.5.3. What we record in the plan
+
+- **Closed questions** → into the new "Plan decisions" template section (Q→A with date).
+- **Deferred** → "Deferred questions" section with rationale.
+- **"Open without rationale"** must not exist in an approved plan.
 
 ---
 
-## ФАЗА 3: Генерация плана
+## Interactive questions rules (shared block)
 
-### Определи куда сохранять:
-- Если есть `docs/plans/` — туда
-- Если нет — создай `docs/plans/`
-- Имя файла: `YYYY-MM-DD-<kebab-case-название>.md`
+When closing questions via `AskUserQuestion`, follow:
 
-### Шаблон плана:
+- **One question = one tool call** (`questions` array of length 1).
+- **2-4 options** + automatic "Other".
+- **Context in the question**: 1-2 sentences on why you're asking and how the answer will shape the plan.
+- **Short label** (1-5 words), **description** explains the consequences of the choice (trade-off).
+- **Recommendation** — first option with `(Recommended)`, if there is a justified one.
+- **header** — 1-3 words, chip-style topic label.
+- **Do not advance** to the next phase until the queue is empty.
+
+---
+
+## PHASE 3: Plan generation
+
+### Determine where to save:
+- If `docs/plans/` exists — put it there
+- If not — create `docs/plans/`
+- File name: `YYYY-MM-DD-<kebab-case-name>.md`
+
+### Plan template:
 
 ```markdown
-# План: [Полное название задачи]
+# Plan: [Full task name]
 
-**Дата:** YYYY-MM-DD
-**Статус:** 📝 Планирование
-**Приоритет:** P0/P1/P2
-**Спецификация:** [ссылка на docs/specs/YYYY-MM-DD-name.md]
+**Date:** YYYY-MM-DD
+**Status:** 📝 Planning
+**Priority:** P0/P1/P2
+**Specification:** [link to docs/specs/YYYY-MM-DD-name.md]
 
-## Цель
+## Goal
 
-[Краткая цель из спецификации — 1-2 предложения]
+[Short goal from the specification — 1-2 sentences]
 
-## Текущее состояние
+## Current state
 
-[Результат анализа кодовой базы: какие модули существуют, что затронуто.
-Конкретные файлы.]
+[Result of codebase analysis: which modules exist, what is affected.
+Concrete files.]
 
-## Архитектура решения
+## Solution architecture
 
 ```mermaid
 graph TD
@@ -159,27 +159,27 @@ graph TD
     B --> C[Storage]
 ```
 
-[Адаптируй под стек проекта. Покажи поток данных, компоненты, связи.]
+[Adapt to the project's stack. Show data flow, components, links.]
 
-## Решение
+## Solution
 
-### [Слой 1 — например Backend / API / Server]
+### [Layer 1 — e.g. Backend / API / Server]
 
-#### Файлы:
-- [ ] `path/to/file.ext` — [описание изменения]
-- [ ] `path/to/another.ext` — [описание]
+#### Files:
+- [ ] `path/to/file.ext` — [description of change]
+- [ ] `path/to/another.ext` — [description]
 
-#### API / Команды / Endpoints:
+#### API / Commands / Endpoints:
 
-| Endpoint/Команда | Вход | Выход | Описание |
-|------------------|------|-------|----------|
-| `method /path` | `RequestType` | `ResponseType` | Описание |
+| Endpoint/Command | Input | Output | Description |
+|------------------|-------|--------|-------------|
+| `method /path` | `RequestType` | `ResponseType` | Description |
 
-#### Структуры данных (псевдокод):
+#### Data structures (pseudocode):
 
 ```pseudo
 Request {
-    field: Type,          // описание
+    field: Type,          // description
     optional?: Type,
 }
 
@@ -189,7 +189,7 @@ Response {
 }
 ```
 
-#### Схема данных (если нужна миграция):
+#### Data schema (if migration is needed):
 
 ```pseudo
 TABLE name (
@@ -199,123 +199,123 @@ TABLE name (
 )
 ```
 
-### [Слой 2 — например Frontend / UI / Client]
+### [Layer 2 — e.g. Frontend / UI / Client]
 
-#### Файлы:
-- [ ] `path/to/component.ext` — [описание]
-- [ ] `path/to/service.ext` — [описание]
+#### Files:
+- [ ] `path/to/component.ext` — [description]
+- [ ] `path/to/service.ext` — [description]
 
-#### Компонентная структура:
+#### Component structure:
 
 ```pseudo
 PageComponent
-  ├── Header (фильтры, действия)
+  ├── Header (filters, actions)
   ├── List
   │   └── ListItem
   └── DetailView
 ```
 
-## Фазы реализации
+## Implementation phases
 
-### Фаза 1: [Название — например "Данные и API"] (оценка: X ч)
-- [ ] Задача 1 → `path/to/file`
-- [ ] Задача 2 → `path/to/file`
-- [ ] Тесты фазы 1
+### Phase 1: [Name — e.g. "Data and API"] (estimate: X h)
+- [ ] Task 1 → `path/to/file`
+- [ ] Task 2 → `path/to/file`
+- [ ] Phase 1 tests
 
-### Фаза 2: [Название — например "Сервисный слой"] (оценка: X ч)
-- [ ] Задача 3 → `path/to/file`
-- [ ] Задача 4 → `path/to/file`
+### Phase 2: [Name — e.g. "Service layer"] (estimate: X h)
+- [ ] Task 3 → `path/to/file`
+- [ ] Task 4 → `path/to/file`
 
-### Фаза 3: [Название — например "UI"] (оценка: X ч)
-- [ ] Задача 5 → `path/to/file`
-- [ ] Задача 6 → `path/to/file`
+### Phase 3: [Name — e.g. "UI"] (estimate: X h)
+- [ ] Task 5 → `path/to/file`
+- [ ] Task 6 → `path/to/file`
 
-### Фаза 4: Тестирование и полировка (оценка: X ч)
-- [ ] Unit-тесты
-- [ ] Интеграционные тесты
-- [ ] Ручное тестирование по сценариям из спеки
-- [ ] Линтинг и проверка типов
+### Phase 4: Testing and polish (estimate: X h)
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Manual testing against the spec's scenarios
+- [ ] Linting and type checking
 
-## Трейсабельность: Требования → Задачи
+## Traceability: Requirements → Tasks
 
-| Требование | Фаза | Задачи |
-|------------|------|--------|
-| FR-001 | 1, 2 | Описание |
-| FR-002 | 3 | Описание |
+| Requirement | Phase | Tasks |
+|-------------|-------|-------|
+| FR-001 | 1, 2 | Description |
+| FR-002 | 3 | Description |
 
-## Риски и митигации
+## Risks and mitigations
 
-| Риск | Вероятность | Влияние | Митигация |
-|------|-------------|---------|-----------|
-| [Описание] | Низкая/Средняя/Высокая | Низкое/Среднее/Высокое | [Что делать] |
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| [Description] | Low/Medium/High | Low/Medium/High | [What to do] |
 
-## Зависимости
+## Dependencies
 
-### Пакеты / Библиотеки
-- [Новые зависимости, если нужны]
+### Packages / Libraries
+- [New dependencies, if needed]
 
-### Связанные задачи
-- [Зависимости от других задач]
+### Related tasks
+- [Dependencies on other tasks]
 
-## Отложенные вопросы
+## Deferred questions
 
-> Сюда — **только** осознанно отложенные в Фазе 2.5. Пустая секция = норма.
-> Размытых `- [ ] обсудить X` в утверждённом плане быть не должно.
+> Only **consciously** deferred items from Phase 2.5 go here. Empty section = normal.
+> Vague `- [ ] discuss X` entries must not exist in an approved plan.
 
-| Вопрос | Почему отложено | Когда нужен ответ | Кто решает |
-|--------|-----------------|-------------------|------------|
-| [Вопрос] | [Обоснование] | До фазы N / перед прод-релизом / ... | Пользователь / архитектор / ... |
+| Question | Why deferred | When the answer is needed | Who decides |
+|----------|--------------|---------------------------|-------------|
+| [Question] | [Rationale] | Before phase N / before prod release / ... | User / architect / ... |
 
-## Решения по плану
+## Plan decisions
 
-> История архитектурных решений уровня реализации (Q→A пары из Фазы 2.5).
+> History of implementation-level architectural decisions (Q→A pairs from Phase 2.5).
 
-| # | Вопрос | Решение | Дата |
-|---|--------|---------|------|
-| PD-001 | [Какой был вопрос] | [Что выбрали и почему] | YYYY-MM-DD |
+| # | Question | Decision | Date |
+|---|----------|----------|------|
+| PD-001 | [What was the question] | [What we chose and why] | YYYY-MM-DD |
 | PD-002 | ... | ... | ... |
 ```
 
-### Правила:
+### Rules:
 
-1. **Только псевдокод** — не пиши компилируемый код, но покажи структуры и контракты
-2. **Mermaid-диаграмма** — обязательна, адаптирована под стек
-3. **Каждый чеклист-пункт привязан к файлу** — реальные пути проекта
-4. **Адаптируй под стек** — секции Backend/Frontend, названия слоёв, команды тестирования
-5. **Оценки времени** — реалистичные, в часах
-6. **Фазы** — каждая самодостаточна и тестируема
-7. **Трейсабельность** — каждое требование из спеки покрыто задачей
-8. **Закрытые вопросы → «Решения по плану»**, **отложенные → «Отложенные вопросы»** (с обоснованием). Незакрытых-без-обоснования в финальном плане быть не должно.
-
----
-
-## ФАЗА 4: Согласование
-
-1. **Самопроверка** (МОЛЧА): в шаблоне «Отложенные вопросы» содержит только записи с заполненными `Почему отложено` и `Когда нужен ответ`. «Решения по плану» отражают все Q→A из Фазы 2.5. Никаких `- [ ] обсудить X` без обоснования. Если что-то нарушено — вернись в Фазу 2.5.
-
-2. Покажи сводку: фазы + общая оценка часов + **N решений** + **M отложенных вопросов**.
-3. Спроси: **"План готов. Принять, или нужны правки?"**
-   - Правки → внеси
-   - Принять → фаза 5
+1. **Pseudocode only** — don't write compilable code, but show structures and contracts
+2. **Mermaid diagram** — required, adapted to the stack
+3. **Every checklist item is tied to a file** — real project paths
+4. **Adapt to the stack** — Backend/Frontend sections, layer names, test commands
+5. **Time estimates** — realistic, in hours
+6. **Phases** — each self-contained and testable
+7. **Traceability** — every spec requirement is covered by a task
+8. **Closed questions → "Plan decisions"**, **deferred → "Deferred questions"** (with rationale). Unclosed-without-rationale items must not remain in the final plan.
 
 ---
 
-## ФАЗА 5: Регистрация и финализация
+## PHASE 4: Approval
 
-### 5.1. Сохранить файл
+1. **Self-check** (SILENT): the template's "Deferred questions" contains only entries with filled-in `Why deferred` and `When the answer is needed`. "Plan decisions" reflects all Q→A from Phase 2.5. No `- [ ] discuss X` without rationale. If anything is violated — go back to Phase 2.5.
+
+2. Show a summary: phases + total hour estimate + **N decisions** + **M deferred questions**.
+3. Ask: **"Plan is ready. Accept, or do you want changes?"**
+   - Changes → apply them
+   - Accept → phase 5
+
+---
+
+## PHASE 5: Registration and finalization
+
+### 5.1. Save the file
 Write tool → `docs/plans/YYYY-MM-DD-name.md`
 
-### 5.2. Регистрация в трекере задач (если есть)
-- Если есть TASKS.md и task-tracker скрипт:
+### 5.2. Register in the task tracker (if any)
+- If TASKS.md and a task-tracker script exist:
   ```bash
-  python3 .claude/skills/task-tracker/scripts/tasks.py add "Описание" "docs/plans/YYYY-MM-DD-name.md"
+  python3 .claude/skills/task-tracker/scripts/tasks.py add "Description" "docs/plans/YYYY-MM-DD-name.md"
   ```
-- Если есть TASKS.md но нет скрипта — добавь строку вручную
-- Если нет трекера — пропусти, сообщи пользователю
+- If TASKS.md exists but no script — add the row manually
+- If there's no tracker — skip and tell the user
 
-### 5.3. Финальный вывод
-- Путь к спецификации
-- Путь к плану
-- ID задачи (если зарегистрирована)
-- Общая оценка часов
-- Следующий шаг: начать реализацию с Фазы 1
+### 5.3. Final output
+- Path to the specification
+- Path to the plan
+- Task ID (if registered)
+- Total hour estimate
+- Next step: start implementation from Phase 1

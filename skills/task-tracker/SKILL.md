@@ -1,11 +1,11 @@
 ---
 name: task-tracker
 description: >-
-  Управление задачами проекта в TASKS.md. Парсит markdown-таблицы, возвращает JSON,
-  обновляет статусы, добавляет и архивирует задачи. Синхронизирует с TodoWrite.
-  Активируется при: "задачи", "статус задач", "что осталось", "обнови TASKS",
-  "покажи задачи", "следующая задача", "task tracker", а также после сжатия контекста.
-  НЕ активируется для: обычных обсуждений кода, git-операций, сборки.
+  Manage project tasks in TASKS.md. Parses markdown tables, returns JSON,
+  updates statuses, adds and archives tasks. Syncs with TodoWrite.
+  Activates on: "tasks", "task status", "what's left", "update TASKS",
+  "show tasks", "next task", "task tracker", and after context compaction.
+  Does NOT activate for: regular code discussions, git operations, builds.
 allowed-tools:
   - Read
   - Edit
@@ -13,180 +13,180 @@ allowed-tools:
   - TodoWrite
 ---
 
-# Task Tracker — Управление задачами в TASKS.md
+# Task Tracker — Managing tasks in TASKS.md
 
-Скрипт: `.claude/skills/task-tracker/scripts/tasks.py`
-Файл задач: `TASKS.md` (в корне проекта)
+Script: `.claude/skills/task-tracker/scripts/tasks.py`
+Tasks file: `TASKS.md` (in the project root)
 
-## Когда активировать
+## When to activate
 
-- Пользователь спрашивает: "задачи", "статус", "что осталось", "покажи задачи"
-- Пользователь просит: "обнови TASKS.md", "отметь задачу как готово"
-- **После сжатия контекста (compaction)** — если пользователь продолжает работу над задачей
-- При создании нового плана (для регистрации в TASKS.md)
-- При завершении задачи (для обновления статуса)
+- The user asks: "tasks", "status", "what's left", "show tasks"
+- The user requests: "update TASKS.md", "mark task as done"
+- **After context compaction** — if the user continues work on a task
+- When a new plan is created (to register it in TASKS.md)
+- When a task is completed (to update its status)
 
-## Команды скрипта
+## Script commands
 
-Все команды возвращают JSON. Запускать из корня проекта.
+All commands return JSON. Run from the project root.
 
-### Чтение
+### Reading
 
 ```bash
-# Все задачи (active + backlog) со сводкой
+# All tasks (active + backlog) with a summary
 python3 .claude/skills/task-tracker/scripts/tasks.py list
 
-# Только активные задачи
+# Active tasks only
 python3 .claude/skills/task-tracker/scripts/tasks.py active
 
-# Только backlog
+# Backlog only
 python3 .claude/skills/task-tracker/scripts/tasks.py backlog
 
-# Детали одной задачи
+# Details of a single task
 python3 .claude/skills/task-tracker/scripts/tasks.py show T-001
 
-# Следующий свободный ID
+# Next free ID
 python3 .claude/skills/task-tracker/scripts/tasks.py next-id
 ```
 
-### Запись
+### Writing
 
 ```bash
-# Обновить статус задачи
-python3 .claude/skills/task-tracker/scripts/tasks.py update T-001 "✅ Готово"
+# Update task status
+python3 .claude/skills/task-tracker/scripts/tasks.py update T-001 "✅ Done"
 
-# Добавить задачу в Active
-python3 .claude/skills/task-tracker/scripts/tasks.py add "Название задачи" "docs/plans/plan.md"
+# Add a task to Active
+python3 .claude/skills/task-tracker/scripts/tasks.py add "Task title" "docs/plans/plan.md"
 
-# Добавить задачу в Backlog
-python3 .claude/skills/task-tracker/scripts/tasks.py add-backlog "Название" "docs/plans/plan.md" "Примечание"
+# Add a task to Backlog
+python3 .claude/skills/task-tracker/scripts/tasks.py add-backlog "Title" "docs/plans/plan.md" "Note"
 
-# Переместить в архив
+# Move to archive
 python3 .claude/skills/task-tracker/scripts/tasks.py archive T-001
 ```
 
-## Workflow: Показать задачи
+## Workflow: Show tasks
 
-Когда пользователь просит показать задачи:
+When the user asks to show tasks:
 
-1. Запусти `python3 .claude/skills/task-tracker/scripts/tasks.py active`
-2. Получи JSON с задачами
-3. Выведи пользователю в читаемом формате:
-   - Задачи 🔄 В работе — выделить как текущие
-   - Задачи ✅ Готово — отметить как завершённые
-   - Показать общую сводку (сколько в работе, сколько завершено)
-4. **Создай TodoWrite** со всеми задачами в статусе 🔄 — для отслеживания в UI
+1. Run `python3 .claude/skills/task-tracker/scripts/tasks.py active`
+2. Get the JSON with tasks
+3. Output to the user in a readable format:
+   - 🔄 In progress tasks — highlight as current
+   - ✅ Done tasks — mark as completed
+   - Show an overall summary (how many in progress, how many done)
+4. **Create a TodoWrite** with all 🔄 tasks — to track them in the UI
 
-## Workflow: После сжатия контекста
+## Workflow: After context compaction
 
-**КРИТИЧНО.** Если ты замечаешь, что контекст был сжат и ты работал над задачей:
+**CRITICAL.** If you notice the context was compacted and you were working on a task:
 
-1. Запусти `python3 .claude/skills/task-tracker/scripts/tasks.py active`
-2. Найди задачи в статусе 🔄
-3. Пересоздай TodoWrite с этими задачами
-4. Сообщи пользователю, какие задачи сейчас в работе
-5. Спроси, над какой задачей продолжить
+1. Run `python3 .claude/skills/task-tracker/scripts/tasks.py active`
+2. Find tasks in 🔄 status
+3. Recreate TodoWrite with those tasks
+4. Tell the user which tasks are currently in progress
+5. Ask which task to continue
 
-## Workflow: Создание плана
+## Workflow: Creating a plan
 
-Когда создаётся новый план (режим Plan):
+When a new plan is created (Plan mode):
 
-1. Создай файл плана в `docs/plans/YYYY-MM-DD-name.md`
-2. Запусти: `python3 .claude/skills/task-tracker/scripts/tasks.py add "Описание задачи" "docs/plans/YYYY-MM-DD-name.md"`
-3. Покажи пользователю ID новой задачи
+1. Create the plan file in `docs/plans/YYYY-MM-DD-name.md`
+2. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py add "Task description" "docs/plans/YYYY-MM-DD-name.md"`
+3. Show the user the new task's ID
 
-## Workflow: Начало работы над задачей
+## Workflow: Starting work on a task
 
-Когда берёшь задачу в работу (режим Build):
+When you take a task into work (Build mode):
 
-1. Запусти: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "🔄 В работе"`
-2. Создай TodoWrite с подзадачами из плана
+1. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "🔄 In progress"`
+2. Create a TodoWrite with subtasks from the plan
 
-## Workflow: Завершение задачи
+## Workflow: Completing a task
 
-Когда задача выполнена:
+When a task is done:
 
-1. Запусти: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "✅ Готово"`
-2. Обнови TodoWrite — отметь задачу как completed
-3. Если план можно архивировать: `python3 .claude/skills/task-tracker/scripts/tasks.py archive T-XXX`
+1. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "✅ Done"`
+2. Update TodoWrite — mark the task as completed
+3. If the plan can be archived: `python3 .claude/skills/task-tracker/scripts/tasks.py archive T-XXX`
 
-## Формат ID задач
+## Task ID format
 
-- Формат: `T-XXX` (T-001, T-002, ...)
-- ID автоматически инкрементируется
-- Используй `next-id` чтобы узнать следующий свободный
+- Format: `T-XXX` (T-001, T-002, ...)
+- ID auto-increments
+- Use `next-id` to learn the next free one
 
-## Статусы
+## Statuses
 
-| Эмодзи | Статус | Когда использовать |
-|--------|--------|--------------------|
-| 📝 | Планирование | План создан, работа не начата |
-| 🔄 | В работе | Активная разработка |
-| 👀 | На проверке | Code review / тестирование |
-| ✅ | Готово | Выполнено |
+| Emoji | Status | When to use |
+|-------|--------|-------------|
+| 📝 | Planning | Plan created, work not started |
+| 🔄 | In progress | Active development |
+| 👀 | In review | Code review / testing |
+| ✅ | Done | Completed |
 
-При обновлении статуса можно добавить пояснение: `"✅ Готово (v0.38.0)"`, `"🔄 Фазы 1-2 готовы"`.
+When updating status you can add a note: `"✅ Done (v0.38.0)"`, `"🔄 Phases 1-2 done"`.
 
-## Интеграция с Yttri через MCP
+## Yttri integration via MCP
 
-Если к IDE подключён MCP-сервер Yttri (`http://localhost:9315/mcp`), доступны дополнительные инструменты для работы с задачами **в приложении Yttri**:
+If the IDE is connected to the Yttri MCP server (`http://localhost:9315/mcp`), additional tools are available for working with tasks **in the Yttri app**:
 
-### Доступные MCP tools (домен tasks)
+### Available MCP tools (tasks domain)
 
-| MCP Tool | Аналог tasks.py | Что делает |
-|----------|-----------------|------------|
-| `list_tasks(status?, limit?)` | `active` / `list` | Список задач Yttri. Фильтр: `todo`, `in_progress`, `done`, `all` |
-| `get_task(uid)` | `show T-XXX` | Детали задачи по uid (title, description, status, priority, due_date, subtasks) |
-| `create_task(title, description?, priority?, due_date?)` | `add` | Создать задачу в Yttri. Появится в UI Tasks |
-| `update_task(uid, status?, title?, priority?)` | `update` | Обновить статус: `todo`, `in_progress`, `done` |
-| `delete_task(uid)` | `archive` (близко) | Удалить задачу из Yttri |
+| MCP Tool | tasks.py equivalent | What it does |
+|----------|---------------------|--------------|
+| `list_tasks(status?, limit?)` | `active` / `list` | List Yttri tasks. Filter: `todo`, `in_progress`, `done`, `all` |
+| `get_task(uid)` | `show T-XXX` | Task details by uid (title, description, status, priority, due_date, subtasks) |
+| `create_task(title, description?, priority?, due_date?)` | `add` | Create a task in Yttri. Appears in the Tasks UI |
+| `update_task(uid, status?, title?, priority?)` | `update` | Update status: `todo`, `in_progress`, `done` |
+| `delete_task(uid)` | `archive` (close) | Delete a task from Yttri |
 
-### Две системы — два назначения
+### Two systems — two purposes
 
 | | TASKS.md (`tasks.py`) | Yttri Tasks (MCP) |
 |---|---|---|
-| **Назначение** | Трекер задач разработки проекта (plan → build) | Пользовательские задачи в Yttri desktop |
+| **Purpose** | Project development task tracker (plan → build) | User tasks in Yttri desktop |
 | **ID** | `T-XXX` (T-001, T-213...) | UUID |
-| **Хранение** | Markdown файл в репозитории | SQLite в Yttri |
-| **Видимость** | Git, IDE | Yttri desktop UI |
-| **Доступ** | Всегда (файл) | Только при запущенном Yttri |
+| **Storage** | Markdown file in the repository | SQLite inside Yttri |
+| **Visibility** | Git, IDE | Yttri desktop UI |
+| **Access** | Always (file) | Only when Yttri is running |
 
-### Когда использовать MCP tools
+### When to use MCP tools
 
-- Пользователь просит создать **пользовательскую задачу** в Yttri (не задачу разработки)
-- Нужно посмотреть задачи из Yttri, не переключаясь в приложение
-- Пользователь работает над функционалом и хочет видеть задачу в Yttri UI
-- Пользователь явно говорит "создай задачу в Yttri" / "покажи мои задачи"
+- The user asks to create a **user task** in Yttri (not a dev task)
+- You need to see Yttri tasks without switching to the app
+- The user is working on a feature and wants to see the task in the Yttri UI
+- The user explicitly says "create a task in Yttri" / "show my tasks"
 
-### Когда использовать tasks.py
+### When to use tasks.py
 
-- Управление задачами **разработки** проекта (план → реализация → ретроспектива)
-- Работа с pipeline plan/build/review
-- Обновление статусов задач для трейсабельности в репозитории
-- После сжатия контекста (TASKS.md всегда доступен)
+- Managing project **development** tasks (plan → implementation → retrospective)
+- Working with the plan/build/review pipeline
+- Updating task statuses for traceability in the repo
+- After context compaction (TASKS.md is always available)
 
-### Пример: параллельная работа
+### Example: parallel work
 
 ```
-# 1. Создать задачу разработки в TASKS.md (трекинг плана)
-python3 .claude/skills/task-tracker/scripts/tasks.py add "Рефакторинг auth модуля" "docs/plans/auth-refactor.md"
+# 1. Create a dev task in TASKS.md (plan tracking)
+python3 .claude/skills/task-tracker/scripts/tasks.py add "Refactor auth module" "docs/plans/auth-refactor.md"
 
-# 2. Одновременно создать задачу в Yttri (видна в UI)
-# → MCP tool: create_task(title="Рефакторинг auth модуля", description="План: docs/plans/auth-refactor.md, T-216")
+# 2. Simultaneously create a task in Yttri (visible in UI)
+# → MCP tool: create_task(title="Refactor auth module", description="Plan: docs/plans/auth-refactor.md, T-216")
 ```
 
-### Требования к подключению
+### Connection requirements
 
-1. Yttri desktop запущен
-2. MCP-сервер включён (Settings → Integrations → MCP Server)
-3. Домен `tasks` включён с доступом `read_write`
-4. API-ключ создан и добавлен в конфигурацию IDE
+1. Yttri desktop is running
+2. MCP server is enabled (Settings → Integrations → MCP Server)
+3. The `tasks` domain is enabled with `read_write` access
+4. An API key is created and added to the IDE configuration
 
-## Правила
+## Rules
 
-1. **Не редактируй TASKS.md вручную** — всегда используй скрипт `tasks.py`
-2. **Всегда синхронизируй TodoWrite** с текущими задачами из TASKS.md
-3. **После compaction** — первым делом перечитай задачи через `tasks.py active`
-4. **Новый план = новая запись** в TASKS.md через `tasks.py add`
-5. **Завершение = обновление статуса** через `tasks.py update`
-6. **MCP tools — опциональный канал** для задач в Yttri UI; TASKS.md остаётся основным трекером разработки
+1. **Don't edit TASKS.md by hand** — always use the `tasks.py` script
+2. **Always sync TodoWrite** with the current tasks in TASKS.md
+3. **After compaction** — first thing, reread tasks via `tasks.py active`
+4. **New plan = new entry** in TASKS.md via `tasks.py add`
+5. **Completion = status update** via `tasks.py update`
+6. **MCP tools are an optional channel** for Yttri UI tasks; TASKS.md remains the primary dev tracker

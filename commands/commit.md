@@ -1,62 +1,62 @@
 # Git Commit
 
-Выполни полную автоматизацию коммита и отправки изменений в git.
+Run the full automation for committing and pushing changes in git.
 
-## Процесс
+## Process
 
-1. Проверь статус репозитория:
+1. Check the repository status:
    ```bash
    git status
    ```
 
-2. Покажи изменения:
+2. Show the changes:
    ```bash
    git diff
    ```
 
-3. Покажи недавние коммиты для понимания стиля:
+3. Show recent commits to understand the style:
    ```bash
    git log --oneline -5
    ```
 
-4. На основе изменений сформируй информативное сообщение коммита
+4. Based on the changes, craft an informative commit message
 
-5. Добавь изменённые файлы:
+5. Add the modified files:
    ```bash
    git add .
    ```
 
-6. Создай коммит с сообщением
+6. Create the commit with the message
 
-7. Отправь изменения:
+7. Push the changes:
    ```bash
    git push
    ```
 
-8. Покажи финальный статус
+8. Show the final status
 
-## Правила сообщений коммитов
+## Commit message rules
 
-- Первая строка <= 72 символа
-- Повелительное наклонение на русском языке
-- Без точки в конце первой строки
-- Структура: `<тип>: <краткое описание>`
+- First line <= 72 characters
+- Imperative mood
+- No period at the end of the first line
+- Structure: `<type>: <short description>`
 
-### Типы коммитов
+### Commit types
 
-| Тип | Описание |
-|-----|----------|
-| `feat:` | новая функциональность |
-| `fix:` | исправление ошибки |
-| `docs:` | документация |
-| `style:` | форматирование |
-| `refactor:` | рефакторинг |
-| `test:` | тесты |
-| `chore:` | прочие изменения |
-| `release:` | релиз новой версии |
+| Type | Description |
+|------|-------------|
+| `feat:` | new functionality |
+| `fix:` | bug fix |
+| `docs:` | documentation |
+| `style:` | formatting |
+| `refactor:` | refactor |
+| `test:` | tests |
+| `chore:` | other changes |
+| `release:` | new version release |
 
-## Примеры сообщений
+## Message examples
 
-- `feat: добавить кнопку экспорта отчётов`
-- `fix: исправить утечку памяти при закрытии модального окна`
-- `docs: обновить README с инструкциями по установке`
+- `feat: add report export button`
+- `fix: resolve memory leak on modal close`
+- `docs: update README with installation instructions`

@@ -1,65 +1,65 @@
 ---
-description: Управление задачами проекта в TASKS.md через скил task-tracker. Показывает активные задачи, добавляет новые, обновляет статусы, архивирует завершённые.
+description: Manage project tasks in TASKS.md via the task-tracker skill. Shows active tasks, adds new ones, updates statuses, archives completed.
 allowed-tools: Read, Edit, Bash, TodoWrite, AskUserQuestion
-argument-hint: [list|active|backlog|show|update|add|archive] [args...]
+argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX"
 ---
 
-# Управление задачами (TASKS)
+# Task Management (TASKS)
 
-Активируй скил **task-tracker** и выполни действие согласно аргументам: **$ARGUMENTS**
+Activate the **task-tracker** skill and execute the action per the arguments: **$ARGUMENTS**
 
-> Все операции идут через скрипт `tasks.py` (рядом со скилом).
-> Не редактируй `TASKS.md` руками — используй команды.
+> All operations go through the `tasks.py` script (next to the skill).
+> Don't edit `TASKS.md` by hand — use the commands.
 
 ---
 
-## Если аргументы не заданы
+## If no arguments are given
 
-Покажи активные задачи и сводку:
+Show active tasks and a summary:
 
 ```bash
 python3 <SKILL_DIR>/scripts/tasks.py active
 ```
 
-Где `<SKILL_DIR>` — путь к скилу `task-tracker` (для Claude Code это `.claude/skills/task-tracker/` или `~/.claude/skills/task-tracker/`).
+Where `<SKILL_DIR>` is the path to the `task-tracker` skill (for Claude Code that's `.claude/skills/task-tracker/` or `~/.claude/skills/task-tracker/`).
 
-Затем:
-1. Выведи список в человеко-читаемом формате (🔄 в работе, ✅ готово).
-2. Создай TodoWrite со всеми задачами в статусе 🔄.
-3. Спроси пользователя, что делать дальше (4 опции через `AskUserQuestion`):
-   - Продолжить работу над текущей задачей в 🔄
-   - Создать новую задачу
-   - Архивировать завершённые
-   - Показать backlog
+Then:
+1. Output the list in a human-readable format (🔄 in progress, ✅ done).
+2. Create a TodoWrite with all tasks in 🔄 status.
+3. Ask the user what to do next (4 options via `AskUserQuestion`):
+   - Continue work on the current 🔄 task
+   - Create a new task
+   - Archive completed ones
+   - Show the backlog
 
-## Если аргументы заданы
+## If arguments are given
 
-Передай их напрямую скрипту:
+Pass them straight to the script:
 
 ```bash
 python3 <SKILL_DIR>/scripts/tasks.py $ARGUMENTS
 ```
 
-Распарси JSON-ответ и покажи результат пользователю.
+Parse the JSON response and show the result to the user.
 
-## Доступные субкоманды
+## Available subcommands
 
-| Команда | Что делает |
-|---------|------------|
-| `list` | Все задачи (active + backlog) со сводкой |
-| `active` | Только активные задачи |
-| `backlog` | Только backlog |
-| `show T-XXX` | Детали одной задачи |
-| `update T-XXX "✅ Готово"` | Обновить статус |
-| `add "Название" "путь/к/плану.md"` | Добавить в Active |
-| `add-backlog "Название" "путь.md" "Примечание"` | Добавить в Backlog |
-| `archive T-XXX` | Переместить в архив |
-| `next-id` | Узнать следующий свободный ID |
+| Command | What it does |
+|---------|--------------|
+| `list` | All tasks (active + backlog) with a summary |
+| `active` | Active tasks only |
+| `backlog` | Backlog only |
+| `show T-XXX` | Details of a single task |
+| `update T-XXX "✅ Done"` | Update status |
+| `add "Title" "path/to/plan.md"` | Add to Active |
+| `add-backlog "Title" "path.md" "Note"` | Add to Backlog |
+| `archive T-XXX` | Move to archive |
+| `next-id` | Get the next free ID |
 
-## Если TASKS.md ещё нет
+## If TASKS.md doesn't exist yet
 
-Спроси пользователя, создать ли его из шаблона. Если да — скопируй из `templates/TASKS.md` пакета `ai-spec-kit` в корень проекта.
+Ask the user whether to create it from the template. If yes — copy from `templates/TASKS.md` in the `ai-spec-kit` package into the project root.
 
-## После сжатия контекста
+## After context compaction
 
-Запусти `active` и пересоздай TodoWrite — это восстанавливает контекст работы.
+Run `active` and recreate TodoWrite — this restores work context.

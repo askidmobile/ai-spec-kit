@@ -11,15 +11,15 @@
   "output": "docs/wiki/",
   "auto_update": "prompt",
   "article_sections": [
-    { "name": "Summary", "description": "Автономное краткое резюме темы — что это, зачем, текущее состояние", "required": true },
-    { "name": "Architecture", "description": "Архитектурные решения, компоненты, связи с другими модулями" },
-    { "name": "Key Decisions", "description": "ADR, trade-offs, обоснование выбора" },
-    { "name": "Implementation", "description": "Детали реализации, паттерны, технические нюансы" },
-    { "name": "API Surface", "description": "Публичные интерфейсы, эндпоинты, типы" },
-    { "name": "Data", "description": "Структуры данных, схемы, модели" },
-    { "name": "Gotchas", "description": "Подводные камни, edge cases, ограничения" },
-    { "name": "Open Questions", "description": "Открытые вопросы и TODO" },
-    { "name": "Sources", "description": "Обратные ссылки на исходные файлы", "required": true }
+    { "name": "Summary", "description": "Standalone briefing of the topic — what it is, why, current state", "required": true },
+    { "name": "Architecture", "description": "Architectural decisions, components, connections to other modules" },
+    { "name": "Key Decisions", "description": "ADRs, trade-offs, rationale for the chosen path" },
+    { "name": "Implementation", "description": "Implementation details, patterns, technical nuances" },
+    { "name": "API Surface", "description": "Public interfaces, endpoints, types" },
+    { "name": "Data", "description": "Data structures, schemas, models" },
+    { "name": "Gotchas", "description": "Pitfalls, edge cases, limitations" },
+    { "name": "Open Questions", "description": "Open questions and TODOs" },
+    { "name": "Sources", "description": "Backlinks to all contributing source files", "required": true }
   ],
   "topic_hints": [],
   "link_style": "obsidian"

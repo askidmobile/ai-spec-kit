@@ -1,273 +1,273 @@
 ---
-description: Создание технической спецификации для новой фичи или задачи. Интерактивно собирает требования, анализирует кодовую базу, генерирует спецификацию. Описывает ЧТО делаем и ЗАЧЕМ — без деталей реализации.
+description: Create a technical specification for a new feature or task. Interactively collects requirements, analyzes the codebase, generates a specification. Describes WHAT we're doing and WHY — without implementation details.
 allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(date *), Bash(find *), Write, Edit, TodoWrite, AskUserQuestion
-argument-hint: <краткое-название-фичи>
+argument-hint: <short-feature-name>
 ---
 
-# Генератор технической спецификации (SPEC)
+# Technical Specification Generator (SPEC)
 
-Ты — системный аналитик. Твоя задача — создать техническую спецификацию для: **$ARGUMENTS**
+You are a systems analyst. Your task is to create a technical specification for: **$ARGUMENTS**
 
-> **Спецификация описывает ЧТО делаем и ЗАЧЕМ.**
-> Детальный план реализации (КАК) создаётся отдельно командой `/create-spec-plan`.
-
----
-
-## ФАЗА 1: Разведка проекта (МОЛЧА, без вывода)
-
-Прежде чем задавать вопросы, молча определи контекст проекта:
-
-1. **Стек технологий** — прочитай package.json, Cargo.toml, go.mod, requirements.txt, или другие маркеры стека
-2. **Структура** — `ls` корня проекта, основные директории
-3. **Существующие спецификации** — проверь наличие `docs/specs/`, `specs/`, `spec/`, `docs/` — где уже хранятся спеки в этом проекте
-4. **Задачи** — проверь наличие TASKS.md, TODO.md, или аналогов
-5. **Бриф проекта** — проверь `docs/PROJECT-BRIEF.md` (или аналог). Если есть — прочитай секцию «Открытые вопросы / Отложенные вопросы»; те из них, что блокируют текущую фичу, нужно закрыть в Фазе 1.5.
-
-Запомни стек и структуру — это пригодится для умных вопросов.
+> **A specification describes WHAT we're doing and WHY.**
+> The detailed implementation plan (HOW) is created separately via `/create-spec-plan`.
 
 ---
 
-## ФАЗА 1.5: Закрытие унаследованных вопросов из брифа (если применимо)
+## PHASE 1: Project recon (SILENT, no output)
 
-Если в брифе нашлись open-questions, относящиеся к текущей фиче:
+Before asking questions, silently determine the project context:
 
-1. Выпиши их в очередь.
-2. Задай **по одному** через `AskUserQuestion` (один tool call = один вопрос) — следуй [правилам интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок) ниже.
-3. После ответа на каждый — обнови `docs/PROJECT-BRIEF.md`: перенеси вопрос из «Открытых» в раздел «Решения брифа» с записью `Q: … → A: … (YYYY-MM-DD)`.
+1. **Technology stack** — read package.json, Cargo.toml, go.mod, requirements.txt, or other stack markers
+2. **Structure** — `ls` the project root, main directories
+3. **Existing specifications** — check for `docs/specs/`, `specs/`, `spec/`, `docs/` — where specs are already kept in this project
+4. **Tasks** — check for TASKS.md, TODO.md, or equivalents
+5. **Project brief** — check `docs/PROJECT-BRIEF.md` (or equivalent). If it exists — read the "Open questions / Deferred questions" section; those that block the current feature need to be closed in Phase 1.5.
 
-Не переходи к Фазе 2, пока очередь не пуста (или пользователь явно не отложил остаток).
-
----
-
-## ФАЗА 2: Сбор требований (ОБЯЗАТЕЛЬНО)
-
-Задай пользователю вопросы **одним сообщением**. Адаптируй вопросы под обнаруженный стек.
-
-### Обязательные вопросы:
-1. **Проблема**: Какую проблему решаем? Что сейчас не работает или чего не хватает?
-2. **Цель**: Что должно измениться для пользователя после реализации?
-3. **Тип**: Новая фича / расширение существующей / багфикс / рефакторинг?
-4. **Сценарии**: Опиши 1-3 основных сценария использования (кто, что делает, какой результат)
-5. **Приоритет**: P0 (блокер) / P1 (важно) / P2 (улучшение)?
-
-### Уточняющие вопросы (задай релевантные для стека):
-6. **Интеграции**: Внешние API, сервисы, провайдеры?
-7. **Данные**: Новые сущности, таблицы, схемы? Миграция?
-8. **UI**: Новый экран, компонент, виджет? Макет или референс?
-9. **Ограничения**: Производительность, офлайн, платформы, совместимость?
-10. **Вне scope**: Что точно НЕ входит в эту задачу?
-
-**НЕ ПЕРЕХОДИ ДАЛЬШЕ, пока пользователь не ответит.**
-Если ответы неполные — уточняй. Scope должен быть чётким.
+Remember the stack and structure — useful for asking smart questions.
 
 ---
 
-## ФАЗА 3: Анализ кодовой базы (МОЛЧА)
+## PHASE 1.5: Closing inherited questions from the brief (if applicable)
 
-На основе ответов исследуй проект:
+If the brief contains open questions related to the current feature:
 
-1. **Связанный код** — найди модули, компоненты, сервисы, типы, относящиеся к фиче
-2. **Паттерны** — как реализованы аналогичные фичи в этом проекте
-3. **Текущее состояние** — что уже есть, что сломано, что нужно менять
+1. Write them into a queue.
+2. Ask **one at a time** via `AskUserQuestion` (one tool call = one question) — follow the [interactive questions rules](#interactive-questions-rules-shared-block) below.
+3. After each answer — update `docs/PROJECT-BRIEF.md`: move the question from "Open" to "Brief decisions" with an entry `Q: … → A: … (YYYY-MM-DD)`.
 
----
-
-## ФАЗА 3.5: Выявление и закрытие открытых вопросов
-
-> **Цель**: не оставлять «Открытые вопросы» в спеке размытыми чеклистами, которые потом тянутся через plan → implement → review. Закрыть их сейчас, пока контекст свежий.
-
-### 3.5.1. Соберись с мыслями (МОЛЧА)
-
-После анализа кода у тебя есть набор неоднозначностей. Выпиши их в **внутреннюю очередь** — это всё что нужно решить ПЕРЕД генерацией шаблона. Типичные источники:
-
-- **Технические развилки**: какую существующую подсистему расширить vs создать новую; синхронный API vs очередь; SQLite vs JSON и т.п.
-- **Scope-неясности**: «фича X включает ли Y?», граничные сценарии без явного ответа от пользователя
-- **UX-развилки**: модал vs inline; новая страница vs виджет на существующей
-- **Данные**: новые таблицы vs расширение существующих; миграция vs мягкая совместимость
-- **Зависимости**: использовать существующий модуль (риск coupling) vs дублирование
-- **Конфликт с ответами пользователя из Фазы 2**: что-то противоречит обнаруженной реализации
-
-Если очередь пуста — пропусти эту фазу, переходи к Фазе 4.
-
-### 3.5.2. Задавай вопросы интерактивно — по одному
-
-Следуй [правилам интерактивных вопросов](#правила-интерактивных-вопросов-общий-блок).
-
-Для каждого вопроса из очереди:
-
-1. Один вызов `AskUserQuestion` = **один** вопрос (не группируй несколько в массив questions).
-2. 2-4 варианта ответа с короткими label (1-5 слов) и пояснением description (что произойдёт, какой trade-off).
-3. Если у тебя есть обоснованная рекомендация — первый вариант с пометкой `(Рекомендуется)`.
-4. Дождись ответа.
-5. Если ответ открыл **новый** вопрос (например, выбор стека потянул вопрос о миграции) — добавь его в конец очереди.
-6. Переходи к следующему.
-
-### 3.5.3. Что делать с теми, что НЕ хочется закрывать сейчас
-
-Если пользователь говорит «отложим» / выбирает Other с «решим позже» — это значит вопрос **осознанно** отложен. Запиши его в шаблоне в секции **«11. Отложенные вопросы»** с обязательным полем `Почему отложено:` и `Дедлайн ответа:`.
-
-**НЕ путать с «Открытыми вопросами»**: открытых после Фазы 3.5 быть не должно. Только отложенные с обоснованием.
+Don't advance to Phase 2 until the queue is empty (or the user has explicitly deferred the rest).
 
 ---
 
-## Правила интерактивных вопросов (общий блок)
+## PHASE 2: Requirements gathering (MANDATORY)
 
-При закрытии вопросов через `AskUserQuestion` соблюдай:
+Ask the user questions **in a single message**. Adapt questions to the detected stack.
 
-- **Один вопрос = один tool call**. Массив `questions` всегда длины 1.
-- **2-4 варианта** ответа (плюс автоматический «Other» от UI = свободный ввод).
-- **Контекст в вопросе**: 1-2 предложения почему спрашиваешь и почему это важно для спеки.
-- **Label короткий** (1-5 слов), **description** объясняет последствия выбора (trade-off).
-- **Рекомендация** — первой опцией с суффиксом `(Рекомендуется)`, если действительно есть обоснованная.
-- **header** — 1-3 слова, чип-метка темы вопроса.
-- **Не переходи** к следующей фазе, пока очередь не пуста или все оставшиеся явно помечены пользователем как отложенные.
-- **Сохраняй ответы** локально (в своём ходе мыслей) — они станут содержимым «Решения по спеке» в шаблоне.
+### Mandatory questions:
+1. **Problem**: What problem are we solving? What's broken or missing right now?
+2. **Goal**: What should change for the user after implementation?
+3. **Type**: New feature / extension of existing / bug fix / refactor?
+4. **Scenarios**: Describe 1-3 main usage scenarios (who, what they do, what result)
+5. **Priority**: P0 (blocker) / P1 (important) / P2 (improvement)?
+
+### Clarifying questions (ask the ones relevant to the stack):
+6. **Integrations**: External APIs, services, providers?
+7. **Data**: New entities, tables, schemas? Migration?
+8. **UI**: New screen, component, widget? Mockup or reference?
+9. **Constraints**: Performance, offline, platforms, compatibility?
+10. **Out of scope**: What is definitely NOT part of this task?
+
+**DO NOT MOVE ON until the user responds.**
+If answers are incomplete — clarify. The scope must be clear.
 
 ---
 
-## ФАЗА 4: Генерация спецификации
+## PHASE 3: Codebase analysis (SILENT)
 
-### Определи куда сохранять:
-- Если есть `docs/specs/` — туда
-- Если нет — создай `docs/specs/`
-- Имя файла: `YYYY-MM-DD-<kebab-case-название>.md`
+Based on the answers, investigate the project:
 
-### Шаблон спецификации:
+1. **Related code** — find modules, components, services, types related to the feature
+2. **Patterns** — how analogous features are implemented in this project
+3. **Current state** — what already exists, what's broken, what needs to change
+
+---
+
+## PHASE 3.5: Surfacing and closing open questions
+
+> **Goal**: don't leave "Open questions" in the spec as vague checklists that then drag through plan → implement → review. Close them now, while context is fresh.
+
+### 3.5.1. Get your thoughts together (SILENT)
+
+After code analysis you have a set of ambiguities. Write them into an **internal queue** — that's everything you need to resolve BEFORE generating the template. Typical sources:
+
+- **Technical forks**: which existing subsystem to extend vs build a new one; sync API vs queue; SQLite vs JSON, etc.
+- **Scope unclarities**: "does feature X include Y?", edge-case scenarios without an explicit user answer
+- **UX forks**: modal vs inline; new page vs widget on an existing one
+- **Data**: new tables vs extending existing; migration vs soft compatibility
+- **Dependencies**: use an existing module (coupling risk) vs duplication
+- **Conflict with Phase 2 user answers**: something contradicts the discovered implementation
+
+If the queue is empty — skip this phase, go to Phase 4.
+
+### 3.5.2. Ask interactively — one at a time
+
+Follow the [interactive questions rules](#interactive-questions-rules-shared-block).
+
+For each question in the queue:
+
+1. One `AskUserQuestion` call = **one** question (don't pack several into the questions array).
+2. 2-4 answer options with short labels (1-5 words) and an explanatory description (what will happen, what trade-off).
+3. If you have a justified recommendation — the first option with `(Recommended)`.
+4. Wait for the answer.
+5. If the answer opened a **new** question (e.g., a stack choice pulled up a migration question) — append it to the end of the queue.
+6. Move to the next one.
+
+### 3.5.3. What to do with ones you don't want to close right now
+
+If the user says "let's defer" / picks Other with "decide later" — that means the question is **consciously** deferred. Record it in the template in the **"11. Deferred questions"** section with the mandatory fields `Why deferred:` and `Answer deadline:`.
+
+**Do not confuse with "Open questions"**: after Phase 3.5 there should be no open ones. Only deferred ones with rationale.
+
+---
+
+## Interactive questions rules (shared block)
+
+When closing questions via `AskUserQuestion`, follow:
+
+- **One question = one tool call**. The `questions` array is always length 1.
+- **2-4 options** (plus the automatic "Other" from UI = free-form input).
+- **Context in the question**: 1-2 sentences on why you're asking and why it matters for the spec.
+- **Short label** (1-5 words), **description** explains the consequences of the choice (trade-off).
+- **Recommendation** — as the first option with `(Recommended)` suffix, if there is a genuinely justified one.
+- **header** — 1-3 words, chip-style label for the question topic.
+- **Do not advance** to the next phase until the queue is empty or all remaining items have been explicitly marked by the user as deferred.
+- **Save answers** locally (in your chain of thought) — they will become the contents of "Spec decisions" in the template.
+
+---
+
+## PHASE 4: Specification generation
+
+### Determine where to save:
+- If `docs/specs/` exists — put it there
+- If not — create `docs/specs/`
+- File name: `YYYY-MM-DD-<kebab-case-name>.md`
+
+### Specification template:
 
 ```markdown
-# Спецификация: [Полное название]
+# Specification: [Full name]
 
-**Дата:** YYYY-MM-DD
-**Приоритет:** P0/P1/P2
-**Тип:** Новая фича / Расширение / Багфикс / Рефакторинг
+**Date:** YYYY-MM-DD
+**Priority:** P0/P1/P2
+**Type:** New feature / Extension / Bug fix / Refactor
 
-## 1. Проблема
+## 1. Problem
 
-[Чёткое описание проблемы или потребности. Почему это важно. Что происходит сейчас.]
+[Clear description of the problem or need. Why it matters. What's happening now.]
 
-## 2. Цель
+## 2. Goal
 
-[1-3 предложения: что должно измениться. Фокус на ценности для пользователя.]
+[1-3 sentences: what should change. Focus on user value.]
 
-## 3. Текущее состояние
+## 3. Current state
 
-[Что уже существует в кодовой базе. Какие модули затронуты. Конкретные файлы.]
+[What already exists in the codebase. Which modules are affected. Concrete files.]
 
-## 4. Пользовательские сценарии
+## 4. User scenarios
 
-### Сценарий 1: [Название]
-**Как** [роль], **я хочу** [действие], **чтобы** [результат]
+### Scenario 1: [Name]
+**As** [role], **I want** [action], **so that** [result]
 
-**Шаги:**
-1. Пользователь ...
-2. Система ...
-3. Результат: ...
+**Steps:**
+1. User ...
+2. System ...
+3. Result: ...
 
-**Критерии приёмки:**
-- [ ] [Конкретное проверяемое условие]
-- [ ] [Конкретное проверяемое условие]
+**Acceptance criteria:**
+- [ ] [Concrete verifiable condition]
+- [ ] [Concrete verifiable condition]
 
-### Сценарий 2: ...
+### Scenario 2: ...
 
-## 5. Функциональные требования
+## 5. Functional requirements
 
 ### Must Have (P0)
-- **FR-001**: [Требование]
-- **FR-002**: [Требование]
+- **FR-001**: [Requirement]
+- **FR-002**: [Requirement]
 
 ### Should Have (P1)
-- **FR-010**: [Требование]
+- **FR-010**: [Requirement]
 
 ### Nice to Have (P2)
-- **FR-020**: [Требование]
+- **FR-020**: [Requirement]
 
-## 6. Нефункциональные требования
+## 6. Non-functional requirements
 
-- **Производительность**: [метрики, если применимо]
-- **Безопасность**: [требования]
-- **Совместимость**: [платформы, браузеры, версии]
-- **Доступность**: [a11y требования]
+- **Performance**: [metrics, if applicable]
+- **Security**: [requirements]
+- **Compatibility**: [platforms, browsers, versions]
+- **Accessibility**: [a11y requirements]
 
-## 7. Модель данных (концептуальная)
+## 7. Data model (conceptual)
 
-[Описание сущностей и связей на уровне бизнес-логики. НЕ код.]
+[Description of entities and relationships at the business-logic level. NOT code.]
 
 ```
-Сущность: [Название]
-  - поле: тип (описание)
-  - связь → [Другая сущность]
+Entity: [Name]
+  - field: type (description)
+  - relation → [Other entity]
 ```
 
-## 8. Пользовательский интерфейс
+## 8. User interface
 
-[Описание UI словами или ASCII-схемой. Где, как выглядит, какие элементы.]
+[UI description in words or as an ASCII diagram. Where, what it looks like, what elements.]
 
-## 9. Архитектура (обзорная)
+## 9. Architecture (overview)
 
 ```mermaid
 graph TD
-    A[Пользователь] --> B[Frontend]
+    A[User] --> B[Frontend]
     B --> C[Backend/API]
     C --> D[Storage]
 ```
 
-[Адаптируй диаграмму под стек проекта]
+[Adapt the diagram to the project's stack]
 
-## 10. Вне scope
+## 10. Out of scope
 
-- [Что явно НЕ входит]
-- [Что можно реализовать позже]
+- [What is explicitly NOT included]
+- [What can be implemented later]
 
-## 11. Отложенные вопросы
+## 11. Deferred questions
 
-> Сюда попадают **только** те вопросы, которые пользователь осознанно отложил в Фазе 3.5.
-> Если секция пуста — так и оставь, это норма.
-> «Открытых» (нерешённых-без-обоснования) вопросов в утверждённой спеке быть не должно.
+> Only the questions the user **consciously** deferred in Phase 3.5 go here.
+> If the section is empty — leave it that way, that's normal.
+> "Open" (unresolved-without-rationale) questions must not exist in an approved spec.
 
-| Вопрос | Почему отложено | Когда нужен ответ | Кто решает |
-|--------|-----------------|-------------------|------------|
-| [Вопрос] | [Обоснование — почему сейчас не решаем] | До фазы N плана / перед v2 / ... | Пользователь / архитектор / ... |
+| Question | Why deferred | When the answer is needed | Who decides |
+|----------|--------------|---------------------------|-------------|
+| [Question] | [Rationale — why not solving now] | Before plan phase N / before v2 / ... | User / architect / ... |
 
-## 12. Решения по спеке
+## 12. Spec decisions
 
-> Записывай здесь Q→A пары, закрытые в Фазе 3.5 — это история принятых архитектурных решений (мини-ADR).
+> Record Q→A pairs closed in Phase 3.5 here — this is the history of architectural decisions (mini-ADRs).
 
-| # | Вопрос | Решение | Дата |
-|---|--------|---------|------|
-| D-001 | [Какой был вопрос] | [Что выбрали и почему] | YYYY-MM-DD |
+| # | Question | Decision | Date |
+|---|----------|----------|------|
+| D-001 | [What was the question] | [What we chose and why] | YYYY-MM-DD |
 | D-002 | ... | ... | ... |
 
-## 13. Критерии успеха
+## 13. Success criteria
 
-- [ ] [Как определим, что задача выполнена]
-- [ ] [Метрики успешности]
+- [ ] [How we'll know the task is done]
+- [ ] [Success metrics]
 ```
 
-### Правила:
+### Rules:
 
-1. **Язык бизнеса** — описывай ЧТО, а не КАК. Никакого кода
-2. **Mermaid-диаграмма** — обязательна, адаптирована под стек проекта
-3. **Конкретные файлы** — в "Текущее состояние" ссылайся на реальные пути
-4. **Приоритизация** — Must / Should / Nice to Have
-5. **Критерии приёмки** — проверяемые условия для каждого сценария
-6. **Вне scope** — явно ограничивай scope
-7. **Закрытые вопросы → секция 12** (Решения по спеке), **отложенные → секция 11** (с обоснованием). Незакрытые-без-обоснования в финальной спеке запрещены.
+1. **Business language** — describe WHAT, not HOW. No code
+2. **Mermaid diagram** — required, adapted to the project's stack
+3. **Concrete files** — in "Current state", reference real paths
+4. **Prioritization** — Must / Should / Nice to Have
+5. **Acceptance criteria** — verifiable conditions for every scenario
+6. **Out of scope** — explicitly bound the scope
+7. **Closed questions → section 12** (Spec decisions), **deferred → section 11** (with rationale). Unclosed-without-rationale items are forbidden in the final spec.
 
 ---
 
-## ФАЗА 5: Согласование
+## PHASE 5: Approval
 
-1. **Самопроверка** (МОЛЧА перед показом сводки): убедись что в шаблоне
-   - секция «11. Отложенные вопросы» содержит **только** вопросы с заполненными полями `Почему отложено` и `Когда нужен ответ`;
-   - секция «12. Решения по спеке» отражает все Q→A пары из Фазы 3.5;
-   - **нет** размытых чеклистов вида `- [ ] обсудить X` без обоснования.
+1. **Self-check** (SILENT before showing the summary): make sure the template has
+   - section "11. Deferred questions" containing **only** questions with filled-in `Why deferred` and `When the answer is needed`;
+   - section "12. Spec decisions" reflecting all Q→A pairs from Phase 3.5;
+   - **no** vague checklists like `- [ ] discuss X` without rationale.
 
-   Если что-то осталось «открытым без обоснования» — вернись в Фазу 3.5 и закрой через `AskUserQuestion`.
+   If anything is left "open without rationale" — return to Phase 3.5 and close it via `AskUserQuestion`.
 
-2. Покажи краткую сводку: цель + ключевые требования + количество FR + **N решений** (из секции 12) + **M отложенных вопросов** (из секции 11).
-3. Спроси: **"Спецификация готова. Принять, или нужны правки?"**
-   - Правки → внеси и покажи снова
-   - Принять → сохрани файл
-4. После сохранения выведи:
-   - Путь к файлу
-   - Следующий шаг: **`/create-spec-plan <путь-к-спеке>`** — для создания плана реализации
+2. Show a brief summary: goal + key requirements + FR count + **N decisions** (from section 12) + **M deferred questions** (from section 11).
+3. Ask: **"Specification is ready. Accept, or do you want changes?"**
+   - Changes → apply them and show again
+   - Accept → save the file
+4. After saving, output:
+   - File path
+   - Next step: **`/create-spec-plan <path-to-spec>`** — to create the implementation plan

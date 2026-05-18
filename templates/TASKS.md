@@ -1,18 +1,18 @@
-# Задачи проекта
+# Project tasks
 
-> Управляется скилом `task-tracker` через `tasks.py`. Не редактируй вручную.
-> Команды CLI: `/tasks`, `/tasks active`, `/tasks add "..."`.
+> Managed by the `task-tracker` skill via `tasks.py`. Don't edit by hand.
+> CLI commands: `/tasks`, `/tasks active`, `/tasks add "..."`.
 
-## 🚀 Активные задачи
+## 🚀 Active tasks
 
-| ID | Дата | Задача | План | Статус |
-|----|------|--------|------|--------|
+| ID | Date | Task | Plan | Status |
+|----|------|------|------|--------|
 
 ## 📦 Backlog
 
-| ID | Дата | Задача | План | Примечание |
-|----|------|--------|------|------------|
+| ID | Date | Task | Plan | Note |
+|----|------|------|------|------|
 
-## ✅ Архивировано
+## ✅ Archived
 
-<!-- Сюда переезжают завершённые задачи: `## ✅ Архивировано YYYY-MM-DD` + список. -->
+<!-- Completed tasks land here under dated sections: `## ✅ Archived YYYY-MM-DD` followed by a bullet list. -->
