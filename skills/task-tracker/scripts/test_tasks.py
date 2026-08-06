@@ -61,6 +61,21 @@ class AddTests(unittest.TestCase):
         self.assertIn(f"| {new_id} |", updated)
         self.assertIn("someday", updated)
 
+    def test_pipe_in_title_survives_round_trip(self):
+        # Regression: a "|" in user text used to break the table into
+        # extra cells, shifting columns on the next read/update.
+        updated, new_id = tasks.add_task(BASE, "Fix a | b", "—")
+        self.assertIn("Fix a \\| b", updated)
+        task = [t for t in tasks.parse_tasks(updated)["active"] if t["id"] == new_id][0]
+        self.assertEqual(task["title"], "Fix a | b")
+        self.assertEqual(task["status"], "📝 Planning")
+
+        status, updated2 = tasks.update_task_status(updated, new_id, "✅ Done")
+        self.assertEqual(status, "updated")
+        task = [t for t in tasks.parse_tasks(updated2)["active"] if t["id"] == new_id][0]
+        self.assertEqual(task["title"], "Fix a | b")
+        self.assertEqual(task["status"], "✅ Done")
+
     def test_missing_section_fails(self):
         # Regression: used to report success while inserting nothing.
         no_backlog = (

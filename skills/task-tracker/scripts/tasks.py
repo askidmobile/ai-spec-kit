@@ -58,10 +58,15 @@ def write_file(path: str, content: str):
         f.write(content)
 
 
+def esc_cell(s: str) -> str:
+    """Escape pipes so user text can't break the table structure."""
+    return s.replace("|", "\\|")
+
+
 def parse_table_row(row: str) -> list[str]:
-    """Parse a markdown table row into a list of cells."""
-    cells = row.strip().strip("|").split("|")
-    return [c.strip() for c in cells]
+    """Parse a markdown table row into a list of cells (unescapes \\|)."""
+    cells = re.split(r"(?<!\\)\|", row.strip().strip("|"))
+    return [c.strip().replace("\\|", "|") for c in cells]
 
 
 def parse_section(
@@ -210,7 +215,7 @@ def update_task_status(
             # Active: ID | Date | Task | Plan | Status (index 4).
             if len(cells) >= 5:
                 cells[4] = new_status
-                lines[i] = "| " + " | ".join(cells) + " |"
+                lines[i] = "| " + " | ".join(esc_cell(c) for c in cells) + " |"
                 return "updated", "\n".join(lines)
 
     return "not_found", ""
@@ -222,6 +227,8 @@ def add_task(
     """Add a new task to the given section."""
     next_id = get_next_id(content)
     today = date.today().strftime("%Y-%m-%d")
+    title = esc_cell(title)
+    note = esc_cell(note)
 
     if plan_path and plan_path != "—":
         plan_name = os.path.basename(plan_path)
