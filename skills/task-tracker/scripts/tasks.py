@@ -169,26 +169,49 @@ def get_next_id(content: str) -> str:
     return f"T-{max_id + 1:03d}"
 
 
-def update_task_status(content: str, task_id: str, new_status: str) -> str:
-    """Update a task's status by ID."""
+ACTIVE_HEADER = "## 🚀"
+BACKLOG_HEADER = "## 📦"
+
+
+def update_task_status(
+    content: str, task_id: str, new_status: str
+) -> tuple[str, str]:
+    """Update an Active task's status by ID.
+
+    Returns (status, content) where status is one of:
+      "updated"    — status column updated, content is the new file text
+      "not_found"  — no row with this task_id, content is ""
+      "backlog"    — task lives in Backlog (no Status column), content is ""
+    """
     lines = content.split("\n")
-    updated = False
+    current_section = None
     for i, line in enumerate(lines):
+        stripped = line.strip()
+        # Track which section we're inside.
+        if stripped.startswith(ACTIVE_HEADER):
+            current_section = "active"
+            continue
+        if stripped.startswith(BACKLOG_HEADER):
+            current_section = "backlog"
+            continue
+        # A new ## section outside both ends the active/backlog context.
+        if stripped.startswith("## ") and current_section in ("active", "backlog"):
+            current_section = None
+            continue
+
         if f"| {task_id} |" in line or f"| {task_id.strip()} |" in line:
+            if current_section == "backlog":
+                return "backlog", ""
+            if current_section != "active":
+                continue
             cells = parse_table_row(line)
-            # Identify by column count.
-            # Active: ID | Date | Task | Plan | Status
-            # Backlog: ID | Date | Task | Plan | Note
-            # Status is the last column in Active (index 4).
+            # Active: ID | Date | Task | Plan | Status (index 4).
             if len(cells) >= 5:
                 cells[4] = new_status
                 lines[i] = "| " + " | ".join(cells) + " |"
-                updated = True
-                break
+                return "updated", "\n".join(lines)
 
-    if not updated:
-        return ""
-    return "\n".join(lines)
+    return "not_found", ""
 
 
 def add_task(
@@ -340,9 +363,23 @@ def cmd_show(tasks_path: str, task_id: str):
 
 def cmd_update(tasks_path: str, task_id: str, new_status: str):
     content = read_file(tasks_path)
-    updated = update_task_status(content, task_id, new_status)
+    result, updated = update_task_status(content, task_id, new_status)
 
-    if not updated:
+    if result == "backlog":
+        print(
+            json.dumps(
+                {
+                    "error": (
+                        f"{task_id} is in Backlog, which has no Status column "
+                        f"(its last column is Note). Move it to Active first "
+                        f"or edit the Note directly."
+                    )
+                },
+                ensure_ascii=False,
+            )
+        )
+        sys.exit(1)
+    if result == "not_found":
         print(json.dumps({"error": f"Task {task_id} not found"}, ensure_ascii=False))
         sys.exit(1)
 

@@ -52,7 +52,7 @@ python3 .claude/skills/task-tracker/scripts/tasks.py next-id
 ### Writing
 
 ```bash
-# Update task status
+# Update task status (Active tasks only — Backlog has no Status column)
 python3 .claude/skills/task-tracker/scripts/tasks.py update T-001 "✅ Done"
 
 # Add a task to Active
