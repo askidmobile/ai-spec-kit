@@ -170,6 +170,10 @@ Without this nudge the AI knows the commands exist but may still default
 to "just write the code." With it, the model proactively offers to spec
 out anything bigger than a one-liner.
 
+On greenfield projects `/create-brief` offers to seed `CLAUDE.md` /
+`AGENTS.md` (principles, stack, workflow pointers) automatically as part
+of project initialization.
+
 ## Using the pipeline
 
 ```bash

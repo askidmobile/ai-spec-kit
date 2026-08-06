@@ -245,6 +245,8 @@ and **Risks** (highest-value sections).
    main doc (many personas, deep competitor analysis, long user journeys).
 3. `PROJECT-BRIEF.md` targets 2-4 pages. Overflow goes to `details/`, never
    deleted.
+4. **Language**: write all output files in the language the user spoke during
+   the interview (templates are English scaffolding, not a language mandate).
 
 ## Phase 6: Approval
 
@@ -261,8 +263,17 @@ pipeline pointer:
   ⬜ /create-spec-plan → /create-spec-implement → /create-spec-review
 ```
 
-Greenfield: offer to initialize `docs/specs/`, `docs/plans/`, README seeded
-from the brief, `.gitignore` for the chosen stack — only after confirmation.
+Greenfield: offer to initialize the project skeleton — only after confirmation:
+
+- `docs/specs/`, `docs/plans/`, `.gitignore` for the chosen stack
+- `README.md` seeded from the brief (pitch, stack, status)
+- **`CLAUDE.md` + `AGENTS.md`** seeded from the brief, so every future AI
+  session starts with the right context: one-line pitch, the Principles
+  section, stack, pointers to `docs/brief/PROJECT-BRIEF.md` and
+  `docs/brief/decisions.md` as binding context, and the pipeline nudge
+  (`/create-spec` → `/create-spec-plan` → `/create-spec-implement` →
+  `/create-spec-review`, `/tasks` for tracking). Make `AGENTS.md` a short
+  pointer to `CLAUDE.md` (single source, no divergence).
 
 ---
 
