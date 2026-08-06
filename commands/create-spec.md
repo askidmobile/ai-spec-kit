@@ -76,9 +76,26 @@ Based on the answers, investigate the project:
 
 > **Goal**: don't leave "Open questions" in the spec as vague checklists that then drag through plan → implement → review. Close them now, while context is fresh.
 
-### 3.5.1. Get your thoughts together (SILENT)
+### 3.5.1. Coverage scan → queue (SILENT)
 
-After code analysis you have a set of ambiguities. Write them into an **internal queue** — that's everything you need to resolve BEFORE generating the template. Typical sources:
+First rate each dimension of the future spec as **Clear / Partial / Missing**,
+given everything you know from Phases 1-3:
+
+| Dimension | Covers |
+|-----------|--------|
+| Scope & behavior | user goals, out-of-scope, persona differences |
+| Data | entities, identity, lifecycle, migrations |
+| UX flow | journeys, error/empty/loading states |
+| Quality attributes | performance, security, reliability, a11y |
+| Integrations | external systems, failure modes, formats |
+| Edge cases & failures | negative paths, conflicts, limits |
+| Constraints | platform, compatibility, compliance |
+| Done-ness | are acceptance criteria testable |
+
+Every Partial/Missing dimension that materially affects architecture, data,
+task breakdown, or test design becomes a queue item. Prioritize by
+**Impact × Uncertainty** — high-impact unknowns first; drop trivial
+preferences. Typical fork sources on top of the scan:
 
 - **Technical forks**: which existing subsystem to extend vs build a new one; sync API vs queue; SQLite vs JSON, etc.
 - **Scope unclarities**: "does feature X include Y?", edge-case scenarios without an explicit user answer
@@ -155,7 +172,10 @@ When closing questions via `AskUserQuestion`, follow:
 
 ## 4. User scenarios
 
-### Scenario 1: [Name]
+> Each scenario is an independently deliverable increment with its own
+> priority: implementing just the P1 scenarios must yield a working MVP.
+
+### Scenario 1: [Name] (P1)
 **As** [role], **I want** [action], **so that** [result]
 
 **Steps:**
@@ -163,11 +183,11 @@ When closing questions via `AskUserQuestion`, follow:
 2. System ...
 3. Result: ...
 
-**Acceptance criteria:**
-- [ ] [Concrete verifiable condition]
-- [ ] [Concrete verifiable condition]
+**Acceptance criteria (Given / When / Then):**
+- [ ] Given [precondition], when [action], then [observable result]
+- [ ] Given [precondition], when [action], then [observable result]
 
-### Scenario 2: ...
+### Scenario 2: [Name] (P2) ...
 
 ## 5. Functional requirements
 
@@ -252,6 +272,9 @@ graph TD
 5. **Acceptance criteria** — verifiable conditions for every scenario
 6. **Out of scope** — explicitly bound the scope
 7. **Closed questions → section 12** (Spec decisions), **deferred → section 11** (with rationale). Unclosed-without-rationale items are forbidden in the final spec.
+8. **Testable done-ness** — acceptance and success criteria contain no bare adjectives ("fast", "gracefully", "user-friendly"): numbers or observable behavior only
+9. **Shape fit** — sections are advisory: for a small feature merge or drop what adds nothing (a bug-fix spec needs no UI section); don't over-formalize
+10. **One term — one name** — pick a canonical name per entity/concept and use it in every section (no synonym drift)
 
 ---
 
@@ -262,10 +285,25 @@ graph TD
    - section "12. Spec decisions" reflecting all Q→A pairs from Phase 3.5;
    - **no** vague checklists like `- [ ] discuss X` without rationale.
 
+   **Quality gate** (fix silently before showing):
+   - *Decision-readiness* — trade-offs in D-NNN are explicit, not smoothed over
+   - *Done-ness* — every acceptance/success criterion is testable, no bare adjectives
+   - *Scope honesty* — out-of-scope explicit; unconfirmed guesses tagged `[ASSUMPTION]`
+   - *Substance* — delete boilerplate NFRs that drive no decision
+   - *Coverage* — every scenario maps to ≥1 FR and every Must FR to ≥1 scenario
+
    If anything is left "open without rationale" — return to Phase 3.5 and close it via `AskUserQuestion`.
 
 2. Show a brief summary: goal + key requirements + FR count + **N decisions** (from section 12) + **M deferred questions** (from section 11).
-3. Ask: **"Specification is ready. Accept, or do you want changes?"**
+3. Offer a pressure-test menu (loop until `x`, like the brief engine: apply → show findings → confirm changes → re-offer):
+   ```
+   Spec drafted. Pressure-test it?
+     1. Edge-case sweep — extremes, zeros, concurrency, offline, malformed input
+     2. Red team — attack the FRs as a hostile or careless user
+     3. Pre-mortem — "the feature shipped and flopped: why?"
+     x. Accept as is
+   ```
+4. Ask: **"Specification is ready. Accept, or do you want changes?"**
    - Changes → apply them and show again
    - Accept → save the file
 4. After saving, output:

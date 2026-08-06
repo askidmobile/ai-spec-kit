@@ -96,8 +96,18 @@ By the "Traceability: Requirements → Tasks" table from the plan:
 
 Identify recurring patterns:
 - Systematic under/over-estimates
-- Typical causes of deviations
+- Typical causes of deviations (include the plan's `- deviated:` lines logged during implementation)
 - Unplanned work — what caused it
+
+### 3.4. Consistency sweep
+
+Cross-check the artifacts before writing the retrospective:
+- Spec ↔ plan terminology drift (same entity under different names)?
+- Statuses agree (spec criteria ticks vs plan checklists vs TASKS.md)?
+- Any principle bent during implementation but never justified in the plan's "Complexity & principle deviations"?
+- Brief roadmap: is this feature's item still unticked in `docs/brief/PROJECT-BRIEF.md`?
+
+Findings feed the Lessons/Recommendations sections and Phase 6 updates.
 
 ---
 
@@ -204,10 +214,16 @@ Deferred questions:
 Key deviations:
 - [Briefly — what went off plan]
 
+Definition of Done:
+  Acceptance criteria passed: A/B
+  Must-FRs uncovered: [list or "none"]
+
 Proposed updates:
 1. Plan → add "Retrospective" section + status "✅ Implemented"
 2. Spec → mark fulfilled success criteria
 3. TASKS.md → status "✅ Done"
+4. Brief → tick the roadmap item (+ BD overrides, if implementation reversed a decision)
+5. Tech Debt (TD-NNN) → move to TASKS.md backlog
 
 Accept the updates?
 ```
@@ -231,7 +247,19 @@ After confirmation:
 ### 6.3. TASKS.md
 - If the task is in TASKS.md — update status to "✅ Done"
 
-### 6.4. Commit changes
+### 6.4. Brief (if `docs/brief/` exists)
+- Tick the feature's roadmap item in `PROJECT-BRIEF.md`
+- If implementation reversed a brief decision → append an "overrides BD-XXX" row to `docs/brief/decisions.md` (never edit old rows)
+
+### 6.5. Tech Debt harvest
+If the plan's "Tech Debt" section has TD-NNN entries — offer to move them to
+the Backlog via the task-tracker script, so debt survives outside the plan file:
+```bash
+python3 <SKILL_DIR>/scripts/tasks.py add-backlog "TD-NNN: <description>" "docs/plans/<plan>.md"
+```
+(`<SKILL_DIR>` — the installed `task-tracker` skill directory)
+
+### 6.6. Commit changes
 
 ```bash
 git add <changed files>
@@ -243,7 +271,7 @@ Output the commit hash:
 ✅ Committed: abc1234 — docs(auth-plan): retrospective complete (T-042)
 ```
 
-### 6.5. Final output
+### 6.7. Final output
 
 ```
 📋 Retrospective completed!

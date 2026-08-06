@@ -49,6 +49,11 @@ If the queue is non-empty — ask the questions **one at a time** via `AskUserQu
 
 Don't advance to Phase 2 until the queue is empty.
 
+### 1.5. Pre-flight
+
+1. Read the brief's **Principles** (`docs/brief/PROJECT-BRIEF.md`, if present) — they bind implementation choices too.
+2. Verify the toolchain runs on the **current** tree before touching code: the project's check command (`cargo check` / `tsc --noEmit` / equivalent) and test runner. A broken baseline → report and stop; fixing pre-existing breakage is not part of the phase (offer it as a separate task).
+
 ---
 
 ## PHASE 2: Phase selection
@@ -132,9 +137,12 @@ Execute the phase's tasks **strictly in order**.
 1. **One task at a time** — finish the current one, then move to the next
 2. **Follow the project's patterns** — don't invent your own architecture, copy the style from analogous modules
 3. **Mini-check after every task** — if the task modifies Rust code → `cargo check` afterwards. If TypeScript → `tsc --noEmit`. If it adds a test → run it
-4. **Issues → report immediately** — if a task is impossible or requires changing the plan, stop implementation and tell the user
+4. **Deviation protocol** — when reality contradicts the plan:
+   - **Minor** (extra helper, rename, small refactor en route): do it and log one line in the plan under the current phase — `- deviated: [what and why]`. The retrospective reads these.
+   - **Major** (planned API/assumption doesn't exist, a new dependency is needed, a task is impossible as written): **stop the auto-advance flow**, present the conflict via `AskUserQuestion` (adjust plan / workaround / defer), record the outcome as `PD-NNN`, update the phase checklist, then continue.
 5. **Don't exceed the phase's scope** — don't do tasks from other phases, don't "improve" code outside the plan
 6. **Ambiguity → ask via `AskUserQuestion`**. If a fork appears during implementation that isn't covered by the plan/spec (API choice, data shape, error text, edge-case behavior) — **don't guess**. Ask a question per the shared block rules, wait for the answer, record the decision in the plan (section "Plan decisions", `PD-NNN`), and only then continue.
+7. **Check-first for non-trivial logic** — a branch, loop, parser, or money/security path gets its smallest failing check written before (or immediately after) the code. Trivial glue doesn't — no test theater.
 
 ---
 
@@ -170,6 +178,13 @@ After completing all phase tasks, run full validation:
 ### 6.2. Tests
 - Run tests related to the changed modules
 - If the phase included writing tests — run them separately
+
+### 6.2.5. Acceptance criteria
+
+For the FR-XXX this phase covers (from Phase 3.2), open the spec's scenarios
+and walk their Given/When/Then criteria that are now implementable: verify
+each (test or manual run) and tick `[x]` in the spec for the ones that pass.
+Criteria that can't be checked yet — name them in the phase report.
 
 ### 6.3. Linting (if configured)
 - `cargo clippy`, `eslint`, `prettier` — whatever is set up in the project
@@ -214,7 +229,8 @@ Output a brief report:
 ## PHASE 7: Recording
 
 ### 7.1. Update the plan
-Open the plan file and mark completed tasks: `[ ]` → `[x]`
+Open the plan file and mark completed tasks: `[ ]` → `[x]`.
+In the "Traceability" table, mark this phase's FR rows: ✅ done / 🔶 partial.
 
 ### 7.2. Update TASKS.md (if any)
 If the task is registered in TASKS.md — update progress.

@@ -111,6 +111,16 @@ Follow the [interactive questions rules](#interactive-questions-rules-shared-blo
 
 ---
 
+## PHASE 2.7: Principles gate (SILENT unless violated)
+
+If the brief defines Principles (`docs/brief/PROJECT-BRIEF.md`): check every
+planned architecture choice against them. A violation is either redesigned
+away or explicitly justified in the plan's "Complexity & principle deviations"
+section — never silent. If the justification itself needs a user decision,
+add it to the Phase 2.5 queue.
+
+---
+
 ## Interactive questions rules (shared block)
 
 When closing questions via `AskUserQuestion`, follow:
@@ -217,10 +227,16 @@ PageComponent
 
 ## Implementation phases
 
+> Order phases so each ends in an independently verifiable increment; shared
+> foundations go into Phase 1. Mark `[P]` on tasks that touch different files
+> and can run in parallel. Every phase ends with an **Independent check** —
+> the command or manual scenario proving the increment works standalone.
+
 ### Phase 1: [Name — e.g. "Data and API"] (estimate: X h)
 - [ ] Task 1 → `path/to/file`
-- [ ] Task 2 → `path/to/file`
+- [ ] [P] Task 2 → `path/to/file`
 - [ ] Phase 1 tests
+- **Independent check:** [command / scenario]
 
 ### Phase 2: [Name — e.g. "Service layer"] (estimate: X h)
 - [ ] Task 3 → `path/to/file`
@@ -242,6 +258,15 @@ PageComponent
 |-------------|-------|-------|
 | FR-001 | 1, 2 | Description |
 | FR-002 | 3 | Description |
+
+## Complexity & principle deviations
+
+> Fill ONLY when a plan choice bends a brief Principle or adds notable
+> complexity (new dependency, new service, custom infra). Empty = good.
+
+| Deviation | Principle / simpler alternative | Why justified |
+|-----------|--------------------------------|---------------|
+| [What we're doing] | [What it bends or what would be simpler] | [Why the simple way is insufficient] |
 
 ## Risks and mitigations
 
@@ -292,7 +317,7 @@ PageComponent
 4. **Adapt to the stack** — Backend/Frontend sections, layer names, test commands
 5. **Time estimates** — realistic, in hours
 6. **Phases** — each self-contained and testable
-7. **Traceability** — every spec requirement is covered by a task
+7. **Traceability** — every **Must** FR has ≥1 task; an FR with zero tasks is a blocker: return to the phase breakdown, don't hand-wave it
 8. **Closed questions → "Plan decisions"**, **deferred → "Deferred questions"** (with rationale). Unclosed-without-rationale items must not remain in the final plan.
 
 ---

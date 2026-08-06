@@ -78,10 +78,10 @@ edit it, grep it, diff it.
 | Command | Purpose |
 |---|---|
 | `/create-brief` | Deep coverage-driven interview → `docs/brief/` folder: brief, interview log, decision log, research. Won't generate until every category is closed. `--fast`, `--update`, `--validate` |
-| `/create-spec` | Per-feature technical spec — *what* and *why*, no implementation detail |
-| `/create-spec-plan` | Detailed implementation plan based on the spec — *how*, phases, checklists, Tech Debt ledger |
-| `/create-spec-implement` | Executes phases with auto-advance: validate → self code review → commit per phase (`--pause` to stop between phases) |
-| `/create-spec-review` | Retrospective: plan vs reality, lessons, status updates |
+| `/create-spec` | Per-feature spec — *what* and *why*: coverage-scanned interview, testable Given/When/Then criteria, pressure-test menu |
+| `/create-spec-plan` | Implementation plan — *how*: phases as independent increments, FR→task traceability, principles gate, Tech Debt ledger |
+| `/create-spec-implement` | Executes phases with auto-advance: validate → acceptance criteria → self code review → commit; deviation protocol pauses on plan conflicts (`--pause` between phases) |
+| `/create-spec-review` | Retrospective: plan vs reality, Definition-of-Done check, tech-debt harvest to backlog, brief/roadmap sync |
 | `/tasks` | Manage `TASKS.md` via the `task-tracker` skill |
 | `/commit` | Conventional commit with auto-generated message |
 | `/wiki-init`, `/wiki-compile`, `/wiki-search`, `/wiki-query`, … | Build and query a project knowledge wiki |
