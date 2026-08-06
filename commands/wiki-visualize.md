@@ -8,9 +8,10 @@ Launch an interactive canvas-based knowledge graph of your compiled wiki. Topics
 2. Check that the wiki has been compiled (output directory has `INDEX.md`)
 3. If not compiled, suggest running `/wiki-compile` first
 
-4. Start the visualization server:
+4. Start the visualization server (`<SKILL_DIR>` is the installed `wiki-compiler`
+   skill directory, e.g. `~/.claude/skills/wiki-compiler` or `.claude/skills/wiki-compiler`):
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/visualize/server.js" --wiki-dir "{output_path}"
+   node "<SKILL_DIR>/visualize/server.js" --wiki-dir "{output_path}"
    ```
 
 5. Open the browser:

@@ -308,8 +308,10 @@ Write tool → `docs/plans/YYYY-MM-DD-name.md`
 ### 5.2. Register in the task tracker (if any)
 - If TASKS.md and a task-tracker script exist:
   ```bash
-  python3 .claude/skills/task-tracker/scripts/tasks.py add "Description" "docs/plans/YYYY-MM-DD-name.md"
+  python3 <SKILL_DIR>/scripts/tasks.py add "Description" "docs/plans/YYYY-MM-DD-name.md"
   ```
+  (`<SKILL_DIR>` — the installed `task-tracker` skill directory, e.g.
+  `.claude/skills/task-tracker` or `~/.claude/skills/task-tracker`)
 - If TASKS.md exists but no script — add the row manually
 - If there's no tracker — skip and tell the user
 

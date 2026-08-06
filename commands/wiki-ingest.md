@@ -32,7 +32,7 @@ Interactive workflow for adding one source file to the wiki. The LLM reads the f
 For each affected topic:
 
 1. Read the current topic article from `{output}/topics/{slug}.md`
-2. Read `article_sections` from `.wiki-compiler.json` (or use default template from `${CLAUDE_PLUGIN_ROOT}/templates/article-template.md` if absent)
+2. Read `article_sections` from `.wiki-compiler.json` (or, if absent, use the default template `templates/article-template.md` from the installed `wiki-compiler` skill directory)
 3. Integrate the new source's information into the relevant sections
 4. Respect the user's emphasis guidance from Step 2
 5. Update coverage indicators — the source count may change the coverage level for some sections

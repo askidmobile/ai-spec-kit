@@ -16,6 +16,8 @@ Usage:
     python3 tasks.py next-id                       # Next free ID
 """
 
+from __future__ import annotations
+
 import json
 import re
 import sys
@@ -255,8 +257,11 @@ def add_task(
             elif stripped == "" and last_table_row > 0:
                 break
 
-    if last_table_row > 0:
-        lines.insert(last_table_row + 1, new_row)
+    if last_table_row < 1:
+        # Section (or its table) not found — report failure instead of
+        # silently returning the file unchanged.
+        return "", ""
+    lines.insert(last_table_row + 1, new_row)
 
     return "\n".join(lines), next_id
 
@@ -293,12 +298,19 @@ def archive_task(content: str, task_id: str) -> tuple[str, str]:
 
     if archive_idx < 0:
         # Find the first "✅ Archived" section and insert before it
+        inserted = False
         for i, line in enumerate(lines):
             if line.strip().startswith("## ✅ Archived"):
-                archive_idx = i
                 archive_entry = f"\n{archive_header}\n\n- {task_title} ({task_id})\n"
-                lines.insert(archive_idx, archive_entry)
+                lines.insert(i, archive_entry)
+                inserted = True
                 break
+        if not inserted:
+            # No archive section anywhere — create one at the end of the
+            # file, otherwise the popped task would be lost.
+            while lines and lines[-1].strip() == "":
+                lines.pop()
+            lines.extend(["", archive_header, "", f"- {task_title} ({task_id})", ""])
 
     else:
         # Section exists — append below its header
@@ -407,6 +419,20 @@ def cmd_add(
 ):
     content = read_file(tasks_path)
     updated, new_id = add_task(content, title, plan_path, section, note)
+    if not updated:
+        header = "## 🚀 Active tasks" if section == "active" else "## 📦 Backlog"
+        print(
+            json.dumps(
+                {
+                    "error": (
+                        f"Section '{header}' (with its table) not found in "
+                        f"TASKS.md — copy the structure from templates/TASKS.md"
+                    )
+                },
+                ensure_ascii=False,
+            )
+        )
+        sys.exit(1)
     write_file(tasks_path, updated)
     print(
         json.dumps(

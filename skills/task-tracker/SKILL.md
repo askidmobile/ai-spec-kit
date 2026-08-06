@@ -15,7 +15,10 @@ allowed-tools:
 
 # Task Tracker — Managing tasks in TASKS.md
 
-Script: `.claude/skills/task-tracker/scripts/tasks.py`
+Script: `<SKILL_DIR>/scripts/tasks.py`, where `<SKILL_DIR>` is this skill's
+installed directory — e.g. `~/.claude/skills/task-tracker` (user scope) or
+`.claude/skills/task-tracker` (project scope). Substitute the real path in
+every command below.
 Tasks file: `TASKS.md` (in the project root)
 
 ## When to activate
@@ -34,42 +37,42 @@ All commands return JSON. Run from the project root.
 
 ```bash
 # All tasks (active + backlog) with a summary
-python3 .claude/skills/task-tracker/scripts/tasks.py list
+python3 <SKILL_DIR>/scripts/tasks.py list
 
 # Active tasks only
-python3 .claude/skills/task-tracker/scripts/tasks.py active
+python3 <SKILL_DIR>/scripts/tasks.py active
 
 # Backlog only
-python3 .claude/skills/task-tracker/scripts/tasks.py backlog
+python3 <SKILL_DIR>/scripts/tasks.py backlog
 
 # Details of a single task
-python3 .claude/skills/task-tracker/scripts/tasks.py show T-001
+python3 <SKILL_DIR>/scripts/tasks.py show T-001
 
 # Next free ID
-python3 .claude/skills/task-tracker/scripts/tasks.py next-id
+python3 <SKILL_DIR>/scripts/tasks.py next-id
 ```
 
 ### Writing
 
 ```bash
 # Update task status (Active tasks only — Backlog has no Status column)
-python3 .claude/skills/task-tracker/scripts/tasks.py update T-001 "✅ Done"
+python3 <SKILL_DIR>/scripts/tasks.py update T-001 "✅ Done"
 
 # Add a task to Active
-python3 .claude/skills/task-tracker/scripts/tasks.py add "Task title" "docs/plans/plan.md"
+python3 <SKILL_DIR>/scripts/tasks.py add "Task title" "docs/plans/plan.md"
 
 # Add a task to Backlog
-python3 .claude/skills/task-tracker/scripts/tasks.py add-backlog "Title" "docs/plans/plan.md" "Note"
+python3 <SKILL_DIR>/scripts/tasks.py add-backlog "Title" "docs/plans/plan.md" "Note"
 
 # Move to archive
-python3 .claude/skills/task-tracker/scripts/tasks.py archive T-001
+python3 <SKILL_DIR>/scripts/tasks.py archive T-001
 ```
 
 ## Workflow: Show tasks
 
 When the user asks to show tasks:
 
-1. Run `python3 .claude/skills/task-tracker/scripts/tasks.py active`
+1. Run `python3 <SKILL_DIR>/scripts/tasks.py active`
 2. Get the JSON with tasks
 3. Output to the user in a readable format:
    - 🔄 In progress tasks — highlight as current
@@ -81,7 +84,7 @@ When the user asks to show tasks:
 
 **CRITICAL.** If you notice the context was compacted and you were working on a task:
 
-1. Run `python3 .claude/skills/task-tracker/scripts/tasks.py active`
+1. Run `python3 <SKILL_DIR>/scripts/tasks.py active`
 2. Find tasks in 🔄 status
 3. Recreate TodoWrite with those tasks
 4. Tell the user which tasks are currently in progress
@@ -92,23 +95,23 @@ When the user asks to show tasks:
 When a new plan is created (Plan mode):
 
 1. Create the plan file in `docs/plans/YYYY-MM-DD-name.md`
-2. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py add "Task description" "docs/plans/YYYY-MM-DD-name.md"`
+2. Run: `python3 <SKILL_DIR>/scripts/tasks.py add "Task description" "docs/plans/YYYY-MM-DD-name.md"`
 3. Show the user the new task's ID
 
 ## Workflow: Starting work on a task
 
 When you take a task into work (Build mode):
 
-1. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "🔄 In progress"`
+1. Run: `python3 <SKILL_DIR>/scripts/tasks.py update T-XXX "🔄 In progress"`
 2. Create a TodoWrite with subtasks from the plan
 
 ## Workflow: Completing a task
 
 When a task is done:
 
-1. Run: `python3 .claude/skills/task-tracker/scripts/tasks.py update T-XXX "✅ Done"`
+1. Run: `python3 <SKILL_DIR>/scripts/tasks.py update T-XXX "✅ Done"`
 2. Update TodoWrite — mark the task as completed
-3. If the plan can be archived: `python3 .claude/skills/task-tracker/scripts/tasks.py archive T-XXX`
+3. If the plan can be archived: `python3 <SKILL_DIR>/scripts/tasks.py archive T-XXX`
 
 ## Task ID format
 
@@ -169,7 +172,7 @@ If the IDE is connected to the Yttri MCP server (`http://localhost:9315/mcp`), a
 
 ```
 # 1. Create a dev task in TASKS.md (plan tracking)
-python3 .claude/skills/task-tracker/scripts/tasks.py add "Refactor auth module" "docs/plans/auth-refactor.md"
+python3 <SKILL_DIR>/scripts/tasks.py add "Refactor auth module" "docs/plans/auth-refactor.md"
 
 # 2. Simultaneously create a task in Yttri (visible in UI)
 # → MCP tool: create_task(title="Refactor auth module", description="Plan: docs/plans/auth-refactor.md, T-216")

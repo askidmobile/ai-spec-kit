@@ -123,7 +123,7 @@ For each topic area, also read key source files to enrich understanding:
 - Module names: `auth`, `api-routes`, `data-layer`, `ui-components`
 - Cross-cutting: `infrastructure`, `testing`, `deployment`, `shared-utils`
 
-**Article template:** When `mode` is `codebase`, use `${CLAUDE_PLUGIN_ROOT}/templates/codebase-article-template.md` as the fallback template (instead of the default knowledge template). If `article_sections` is set in config, use those sections (same as knowledge mode).
+**Article template:** When `mode` is `codebase`, use `templates/codebase-article-template.md` (in this skill's directory) as the fallback template (instead of the default knowledge template). If `article_sections` is set in config, use those sections (same as knowledge mode).
 
 ## Phase 3: Compile Topic Articles
 
@@ -133,7 +133,7 @@ For EACH topic that has new or changed source files:
 2. Write the topic article to `{output}/topics/{topic-slug}.md`
 3. **Determine article structure:**
    - If `.wiki-compiler.json` has an `article_sections` array: use those sections in order. Each section's `description` field tells you what content belongs there.
-   - If `article_sections` is absent (legacy configs without this field): fall back to the default template at `${CLAUDE_PLUGIN_ROOT}/templates/article-template.md`
+   - If `article_sections` is absent (legacy configs without this field): fall back to the default template at `templates/article-template.md` in this skill's directory
 4. Fill every section with specific, factual content -- no placeholders
 5. **Summary** should be a standalone briefing: someone reading just this section should understand the current state
 6. **Sources** must list every source file that contributed, using the configured link style
@@ -207,7 +207,7 @@ This is the "so what" that Farzapedia calls the writer's job.}
 ## Phase 3.7: Generate or Update Schema
 
 If `{output}/schema.md` does not exist (first run):
-1. Generate it from `${CLAUDE_PLUGIN_ROOT}/templates/schema-template.md`
+1. Generate it from `templates/schema-template.md` in this skill's directory
 2. Fill in the Topics section AND Concepts section with all discovered slugs and descriptions
 3. Add an Evolution Log entry: "{today's date}: Initial schema generated from {N} topics, {N} concepts"
 
