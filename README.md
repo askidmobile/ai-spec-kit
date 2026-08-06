@@ -45,7 +45,7 @@ function") but breaks down at feature scale. Common problems:
 | You want to… | Without the kit | With the kit |
 |---|---|---|
 | Start a new project from scratch | Verbal pitch, hope for the best | `/create-brief` — 4 blocks of structured questions → `docs/PROJECT-BRIEF.md` |
-| Build a non-trivial feature | "Hey can you add auth?" → 600 lines of guessed code | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (phase by phase) → `/create-spec-review` |
+| Build a non-trivial feature | "Hey can you add auth?" → 600 lines of guessed code | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (auto-advances through phases) → `/create-spec-review` |
 | Pick up after a context reset | Re-explain everything from memory | The AI reads `docs/specs/<feature>.md` + `docs/plans/<feature>.md` and resumes |
 | Track what's in flight | Scattered TODOs in code comments | `TASKS.md` parsed by `task-tracker`, in sync with the IDE todo list |
 | Onboard a teammate (or a new session) | "Read everything in docs/" | `/wiki-compile` → topic-based wiki with coverage tags |
@@ -57,13 +57,16 @@ function") but breaks down at feature scale. Common problems:
 Mon  /create-brief        → docs/PROJECT-BRIEF.md       ─ vision, roadmap
 Mon  /create-spec auth    → docs/specs/auth.md          ─ what & why
 Tue  /create-spec-plan auth → docs/plans/auth.md        ─ how, phases, checklist
-Tue  /create-spec-implement auth   ─ phase 1 (DB schema)
-Wed  /create-spec-implement auth   ─ phase 2 (API)
-Wed  /commit              ─ "feat: auth module phases 1-2"
-Thu  /create-spec-implement auth   ─ phase 3 (UI)
+Wed  /create-spec-implement auth   ─ all phases, each one: implement →
+                                     validate → self code review → commit
 Thu  /create-spec-review auth      ─ what shipped, lessons, archive
 Fri  /wiki-compile        → docs/wiki/                  ─ refreshed knowledge base
 ```
+
+Implementation auto-advances from phase to phase; non-critical review
+findings don't block the flow — they land in the plan's **Tech Debt**
+ledger as `TD-NNN` entries. Prefer a checkpoint between phases? Add
+`--pause`.
 
 Every artefact is plain markdown. Anyone — human or model — can read it,
 edit it, grep it, diff it.
@@ -76,8 +79,8 @@ edit it, grep it, diff it.
 |---|---|
 | `/create-brief` | High-level project brief (vision, roadmap, stakeholders, constraints) |
 | `/create-spec` | Per-feature technical spec — *what* and *why*, no implementation detail |
-| `/create-spec-plan` | Detailed implementation plan based on the spec — *how*, phases, checklists |
-| `/create-spec-implement` | Phase-by-phase execution; updates checklists as it goes |
+| `/create-spec-plan` | Detailed implementation plan based on the spec — *how*, phases, checklists, Tech Debt ledger |
+| `/create-spec-implement` | Executes phases with auto-advance: validate → self code review → commit per phase (`--pause` to stop between phases) |
 | `/create-spec-review` | Retrospective: plan vs reality, lessons, status updates |
 | `/tasks` | Manage `TASKS.md` via the `task-tracker` skill |
 | `/commit` | Conventional commit with auto-generated message |
@@ -178,9 +181,9 @@ out anything bigger than a one-liner.
 # 3. Plan the implementation
 /create-spec-plan auth-with-magic-link
 
-# 4. Execute phase by phase
+# 4. Execute — runs all phases, committing after each
 /create-spec-implement auth-with-magic-link
-# (repeat per phase)
+# (add --pause to stop between phases)
 
 # 5. Retrospective when done
 /create-spec-review auth-with-magic-link

@@ -44,7 +44,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 | Хочется… | Без пакета | С пакетом |
 |---|---|---|
 | Стартовать новый проект | На словах, надеясь на лучшее | `/create-brief` — 4 блока структурированных вопросов → `docs/PROJECT-BRIEF.md` |
-| Сделать нетривиальную фичу | "Добавь авторизацию" → 600 строк нагаданного кода | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (по фазам) → `/create-spec-review` |
+| Сделать нетривиальную фичу | "Добавь авторизацию" → 600 строк нагаданного кода | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (авто-проход по фазам) → `/create-spec-review` |
 | Продолжить после сброса контекста | Пересказывать всё по памяти | AI читает `docs/specs/<feature>.md` + `docs/plans/<feature>.md` и продолжает |
 | Отслеживать что в работе | TODO разбросаны по комментариям | `TASKS.md` парсится `task-tracker`, синхронизирован с todo-листом IDE |
 | Онбордить коллегу (или новую сессию) | «Прочти всё в docs/» | `/wiki-compile` → topic-based wiki с coverage-тегами |
@@ -56,13 +56,15 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 Пн  /create-brief         → docs/PROJECT-BRIEF.md      ─ видение, roadmap
 Пн  /create-spec auth     → docs/specs/auth.md         ─ что и зачем
 Вт  /create-spec-plan auth → docs/plans/auth.md        ─ как, фазы, чеклист
-Вт  /create-spec-implement auth   ─ фаза 1 (схема БД)
-Ср  /create-spec-implement auth   ─ фаза 2 (API)
-Ср  /commit               ─ "feat: модуль auth, фазы 1-2"
-Чт  /create-spec-implement auth   ─ фаза 3 (UI)
+Ср  /create-spec-implement auth   ─ все фазы, каждая: реализация →
+                                    валидация → self code review → commit
 Чт  /create-spec-review auth      ─ что отгружено, уроки, архив
 Пт  /wiki-compile         → docs/wiki/                 ─ обновлённая база знаний
 ```
+
+Реализация сама переходит от фазы к фазе; некритичные замечания ревью
+не останавливают поток — они записываются в секцию **Tech Debt** плана
+как `TD-NNN`. Нужна контрольная точка между фазами — добавь `--pause`.
 
 Каждый артефакт — обычный markdown. Любой (человек или модель) может его
 прочесть, отредактировать, грепнуть, дифнуть.
@@ -75,8 +77,8 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 |---|---|
 | `/create-brief` | Верхнеуровневый бриф проекта (видение, roadmap, стейкхолдеры, ограничения) |
 | `/create-spec` | Спецификация фичи — *что* и *зачем*, без деталей реализации |
-| `/create-spec-plan` | Детальный план реализации на основе спеки — *как*, фазы, чеклисты |
-| `/create-spec-implement` | Реализация по фазам; обновляет чеклисты по мере работы |
+| `/create-spec-plan` | Детальный план реализации на основе спеки — *как*, фазы, чеклисты, реестр Tech Debt |
+| `/create-spec-implement` | Реализация фаз с авто-продвижением: валидация → self code review → commit на каждой фазе (`--pause` — останавливаться между фазами) |
 | `/create-spec-review` | Ретроспектива: план vs реальность, уроки, статусы |
 | `/tasks` | Управление `TASKS.md` через скил `task-tracker` |
 | `/commit` | Conventional commit с автогенерируемым сообщением |
@@ -178,9 +180,9 @@ cd ai-spec-kit
 # 3. План реализации
 /create-spec-plan auth-with-magic-link
 
-# 4. Реализация по фазам
+# 4. Реализация — все фазы подряд, коммит после каждой
 /create-spec-implement auth-with-magic-link
-# (повторяй для каждой фазы)
+# (--pause — останавливаться между фазами)
 
 # 5. Ретроспектива по завершении
 /create-spec-review auth-with-magic-link
