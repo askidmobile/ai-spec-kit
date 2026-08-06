@@ -75,7 +75,7 @@ Phase progress:
 If the user specified a phase number in `$ARGUMENTS` → propose that one.
 Otherwise → propose the next unfinished one (the first ⬜ or 🔄).
 
-**DO NOT MOVE ON until the user confirms the phase.**
+If the user specified a different phase — wait for their input. Otherwise, proceed automatically.
 
 ---
 
@@ -119,7 +119,7 @@ Validation after implementation:
 - [ ] [Manual check if needed]
 ```
 
-**DO NOT MOVE ON until the user confirms the attack plan.**
+Proceed to implementation automatically after displaying this plan. If the user wants to adjust — they will interrupt.
 
 ---
 
@@ -184,6 +184,31 @@ After completing all phase tasks, run full validation:
 
 If validation fails → fix the errors and re-run validation.
 
+### 6.4. Code Review
+
+Run a self-review of all changes made in this phase:
+
+```bash
+git diff HEAD
+```
+
+Check the diff for:
+- **Pattern violations** — does the new code match the project's style and architecture patterns?
+- **Duplication** — is there logic that already exists in another module?
+- **Security issues** — hardcoded secrets, unvalidated input, unsafe operations?
+- **Readability** — overly complex constructs, missing error handling?
+
+Output a brief report:
+```
+🔎 Code Review — Phase N:
+  ✅ No pattern violations
+  ⚠️ src/foo.rs:42 — duplicated logic, consider extracting to helper (non-critical)
+  ✅ No security issues
+```
+
+- **Critical issues** (security, broken contracts, wrong patterns) → fix immediately, re-run validation.
+- **Non-critical issues** (style, duplication, readability) → record in the plan under a "Tech Debt" section as `TD-NNN: <description>`.
+
 ---
 
 ## PHASE 7: Recording
@@ -194,17 +219,24 @@ Open the plan file and mark completed tasks: `[ ]` → `[x]`
 ### 7.2. Update TASKS.md (if any)
 If the task is registered in TASKS.md — update progress.
 
-### 7.3. Propose a commit
-Suggest the user make a commit with the description:
-```
-Suggested commit:
-  feat(<module>): <brief phase description> (T-XXX)
+### 7.3. Commit changes
 
-  Phase N of M of plan [name]:
-  - [What was implemented — by task]
+Run the `/commit` command (or execute directly):
+
+```bash
+git add <changed files>
+git commit -m "feat(<module>): <brief phase description> (T-XXX)
+
+Phase N of M of plan [name]:
+- [What was implemented — by task]"
 ```
 
-### 7.4. Final output
+After committing, output the commit hash and status:
+```
+✅ Committed: abc1234 — feat(auth): implement JWT validation (T-042)
+```
+
+### 7.4. Final output and auto-advance
 
 ```
 📊 Phase N completed!
@@ -212,15 +244,17 @@ Suggested commit:
 Tasks done: X/X
 Files changed: Y
 Validation: ✅ OK
+Code Review: ✅ OK (or ⚠️ N non-critical notes → recorded as TD-NNN)
+Commit: ✅ abc1234
 
 Plan progress:
   ✅ Phase 1: [Name]
   ✅ Phase 2: [Name]  ← current
   ⬜ Phase 3: [Name]
   ⬜ Phase 4: [Name]
-
-→ Next step: /create-spec-implement <path-to-plan> phase N+1
 ```
+
+**Auto-advance**: if there are remaining phases, immediately start the next one from PHASE 2 without stopping. Use `--pause` flag in `$ARGUMENTS` to stop between phases instead.
 
 If this was the last phase:
 ```
