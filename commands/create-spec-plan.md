@@ -274,6 +274,14 @@ PageComponent
 |---|----------|----------|------|
 | PD-001 | [What was the question] | [What we chose and why] | YYYY-MM-DD |
 | PD-002 | ... | ... | ... |
+
+## Tech Debt
+
+> Non-critical issues recorded during implementation code reviews (TD-NNN entries from `/create-spec-implement`).
+
+| # | Description | Phase | Priority |
+|---|-------------|-------|----------|
+| TD-001 | [Description of the issue] | N | Low/Medium |
 ```
 
 ### Rules:
@@ -294,9 +302,7 @@ PageComponent
 1. **Self-check** (SILENT): the template's "Deferred questions" contains only entries with filled-in `Why deferred` and `When the answer is needed`. "Plan decisions" reflects all Q→A from Phase 2.5. No `- [ ] discuss X` without rationale. If anything is violated — go back to Phase 2.5.
 
 2. Show a summary: phases + total hour estimate + **N decisions** + **M deferred questions**.
-3. Ask: **"Plan is ready. Accept, or do you want changes?"**
-   - Changes → apply them
-   - Accept → phase 5
+3. Save the plan automatically and proceed to Phase 5. If the user wants changes — they will interrupt.
 
 ---
 

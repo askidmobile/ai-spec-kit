@@ -212,7 +212,7 @@ Proposed updates:
 Accept the updates?
 ```
 
-**DO NOT MOVE ON until the user confirms.**
+Proceed to status updates automatically after displaying this summary. If the user wants to adjust — they will interrupt.
 
 ---
 
@@ -231,7 +231,19 @@ After confirmation:
 ### 6.3. TASKS.md
 - If the task is in TASKS.md — update status to "✅ Done"
 
-### 6.4. Final output
+### 6.4. Commit changes
+
+```bash
+git add <changed files>
+git commit -m "docs(<plan-name>): retrospective — Phase N complete (T-XXX)"
+```
+
+Output the commit hash:
+```
+✅ Committed: abc1234 — docs(auth-plan): retrospective complete (T-042)
+```
+
+### 6.5. Final output
 
 ```
 📋 Retrospective completed!
