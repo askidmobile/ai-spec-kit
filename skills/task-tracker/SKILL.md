@@ -130,60 +130,10 @@ When a task is done:
 
 When updating status you can add a note: `"✅ Done (v0.38.0)"`, `"🔄 Phases 1-2 done"`.
 
-## Yttri integration via MCP
+## Optional: Yttri app integration
 
-If the IDE is connected to the Yttri MCP server (`http://localhost:9315/mcp`), additional tools are available for working with tasks **in the Yttri app**:
-
-### Available MCP tools (tasks domain)
-
-| MCP Tool | tasks.py equivalent | What it does |
-|----------|---------------------|--------------|
-| `list_tasks(status?, limit?)` | `active` / `list` | List Yttri tasks. Filter: `todo`, `in_progress`, `done`, `all` |
-| `get_task(uid)` | `show T-XXX` | Task details by uid (title, description, status, priority, due_date, subtasks) |
-| `create_task(title, description?, priority?, due_date?)` | `add` | Create a task in Yttri. Appears in the Tasks UI |
-| `update_task(uid, status?, title?, priority?)` | `update` | Update status: `todo`, `in_progress`, `done` |
-| `delete_task(uid)` | `archive` (close) | Delete a task from Yttri |
-
-### Two systems — two purposes
-
-| | TASKS.md (`tasks.py`) | Yttri Tasks (MCP) |
-|---|---|---|
-| **Purpose** | Project development task tracker (plan → build) | User tasks in Yttri desktop |
-| **ID** | `T-XXX` (T-001, T-213...) | UUID |
-| **Storage** | Markdown file in the repository | SQLite inside Yttri |
-| **Visibility** | Git, IDE | Yttri desktop UI |
-| **Access** | Always (file) | Only when Yttri is running |
-
-### When to use MCP tools
-
-- The user asks to create a **user task** in Yttri (not a dev task)
-- You need to see Yttri tasks without switching to the app
-- The user is working on a feature and wants to see the task in the Yttri UI
-- The user explicitly says "create a task in Yttri" / "show my tasks"
-
-### When to use tasks.py
-
-- Managing project **development** tasks (plan → implementation → retrospective)
-- Working with the plan/build/review pipeline
-- Updating task statuses for traceability in the repo
-- After context compaction (TASKS.md is always available)
-
-### Example: parallel work
-
-```
-# 1. Create a dev task in TASKS.md (plan tracking)
-python3 <SKILL_DIR>/scripts/tasks.py add "Refactor auth module" "docs/plans/auth-refactor.md"
-
-# 2. Simultaneously create a task in Yttri (visible in UI)
-# → MCP tool: create_task(title="Refactor auth module", description="Plan: docs/plans/auth-refactor.md, T-216")
-```
-
-### Connection requirements
-
-1. Yttri desktop is running
-2. MCP server is enabled (Settings → Integrations → MCP Server)
-3. The `tasks` domain is enabled with `read_write` access
-4. An API key is created and added to the IDE configuration
+If the IDE is connected to the Yttri desktop app's MCP server, its task tools
+can be used alongside `tasks.py` — see `YTTRI.md` in this skill's directory.
 
 ## Rules
 
@@ -192,4 +142,3 @@ python3 <SKILL_DIR>/scripts/tasks.py add "Refactor auth module" "docs/plans/auth
 3. **After compaction** — first thing, reread tasks via `tasks.py active`
 4. **New plan = new entry** in TASKS.md via `tasks.py add`
 5. **Completion = status update** via `tasks.py update`
-6. **MCP tools are an optional channel** for Yttri UI tasks; TASKS.md remains the primary dev tracker

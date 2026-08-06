@@ -7,13 +7,16 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3848;
+let PORT = 3848;
 
 // Parse CLI args
 let wikiDir = null;
 for (let i = 2; i < process.argv.length; i++) {
   if (process.argv[i] === '--wiki-dir' && process.argv[i + 1]) {
     wikiDir = path.resolve(process.argv[i + 1]);
+    i++;
+  } else if (process.argv[i] === '--port' && process.argv[i + 1]) {
+    PORT = parseInt(process.argv[i + 1], 10) || PORT;
     i++;
   }
 }
@@ -216,7 +219,8 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+// Localhost only — the wiki has no business being visible to the LAN
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`📊 Wiki Knowledge Graph running at http://localhost:${PORT}`);
   console.log(`   Topics: ${loadGraph().topics.length} | Concepts: ${loadGraph().concepts.length}`);
 });
