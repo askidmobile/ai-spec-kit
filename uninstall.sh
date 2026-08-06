@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# ai-spec-kit — удаление команд и скилов из выбранных AI CLI.
+# ai-spec-kit — remove commands and skills from selected AI CLIs.
 #
-# Использование:
-#   ./uninstall.sh                       # интерактивно
+# Usage:
+#   ./uninstall.sh                       # interactive
 #   ./uninstall.sh --target=claude --scope=user
 #   ./uninstall.sh --target=opencode --scope=project --project-dir=.
 #
-# Удаляются только файлы, которые входят в комплект ai-spec-kit
-# (по совпадению имени). Чужие файлы в директориях не трогаем.
+# Only files that belong to the ai-spec-kit bundle are removed
+# (matched by name). Other files in those directories are left alone.
 #
-# Флаги: --target, --scope, --project-dir, --dry-run, -h/--help
+# Flags: --target, --scope, --project-dir, --dry-run, -h/--help
 
 set -euo pipefail
 
@@ -46,7 +46,7 @@ for arg in "$@"; do
     --project-dir=*) PROJECT_DIR="${arg#*=}" ;;
     --dry-run)       DRY_RUN=1 ;;
     -h|--help)       usage ;;
-    *) err "Неизвестный аргумент: $arg" ;;
+    *) err "Unknown argument: $arg" ;;
   esac
 done
 
@@ -61,41 +61,41 @@ ask_choice() {
   done
   local answer
   while true; do
-    read -r -p "Выбор [1-$((${#options[@]}))]: " answer
+    read -r -p "Choice [1-$((${#options[@]}))]: " answer
     if [[ "$answer" =~ ^[0-9]+$ ]] && (( answer >= 1 && answer <= ${#options[@]} )); then
       echo "${options[$((answer-1))]}"
       return
     fi
-    warn "Введите число от 1 до ${#options[@]}"
+    warn "Enter a number between 1 and ${#options[@]}"
   done
 }
 
 if [[ $INTERACTIVE -eq 1 ]]; then
   log "ai-spec-kit uninstaller"
-  choice=$(ask_choice "Откуда удалять?" \
-    "Claude Code" "OpenCode" "Codex" "Все три")
+  choice=$(ask_choice "Uninstall from?" \
+    "Claude Code" "OpenCode" "Codex" "All three")
   case "$choice" in
     "Claude Code") TARGET="claude" ;;
     "OpenCode")    TARGET="opencode" ;;
     "Codex")       TARGET="codex" ;;
-    "Все три")     TARGET="claude,opencode,codex" ;;
+    "All three")   TARGET="claude,opencode,codex" ;;
   esac
 
   choice=$(ask_choice "Scope?" \
-    "User (~/)" "Project (текущая папка)")
+    "User (~/)" "Project (current folder)")
   case "$choice" in
     User*)    SCOPE="user" ;;
     Project*) SCOPE="project" ;;
   esac
 
   if [[ "$SCOPE" == "project" ]]; then
-    read -r -p "Путь к проекту [$(pwd)]: " input
+    read -r -p "Project path [$(pwd)]: " input
     PROJECT_DIR="${input:-$(pwd)}"
   fi
 fi
 
-[[ -z "$TARGET" ]] && err "Не задан --target"
-[[ -z "$SCOPE"  ]] && err "Не задан --scope"
+[[ -z "$TARGET" ]] && err "Missing --target"
+[[ -z "$SCOPE"  ]] && err "Missing --scope"
 [[ "$TARGET" == "all" ]] && TARGET="claude,opencode,codex"
 
 set_target_dirs() {
@@ -128,13 +128,13 @@ set_target_dirs() {
         SKILL_DIR="$PROJECT_DIR/.codex/skills"
       fi
       ;;
-    *) err "Неизвестный target: $tool" ;;
+    *) err "Unknown target: $tool" ;;
   esac
 }
 
-# Удаляем только если содержимое (по имени) соответствует комплекту.
-# Симлинк на наш KIT_DIR удаляем безусловно. Регулярный файл — только
-# если был установлен из пакета (тот же basename есть в KIT_DIR).
+# Remove only when the content (by name) matches the kit.
+# A symlink into our KIT_DIR is removed unconditionally. A regular file —
+# only if it was installed from the kit (same basename exists in KIT_DIR).
 remove_if_ours() {
   local dst="$1" expected_src="$2"
   [[ -e "$dst" || -L "$dst" ]] || return 0
@@ -145,14 +145,14 @@ remove_if_ours() {
     if [[ "$link_target" == "$expected_src" || "$link_target" == */ai-spec-kit/* ]]; then
       run rm -f "$dst"
     else
-      warn "пропуск (симлинк ведёт не в ai-spec-kit): $dst"
+      warn "skip (symlink points outside ai-spec-kit): $dst"
     fi
   else
-    # Копия — удаляем, если такой же basename есть в комплекте
+    # A copy — remove if the same basename exists in the kit
     if [[ -e "$expected_src" ]]; then
       run rm -rf "$dst"
     else
-      warn "пропуск (не из пакета): $dst"
+      warn "skip (not from the kit): $dst"
     fi
   fi
 }
@@ -160,7 +160,7 @@ remove_if_ours() {
 IFS=',' read -ra TARGETS <<< "$TARGET"
 for tool in "${TARGETS[@]}"; do
   tool="$(echo "$tool" | xargs)"
-  log "Удаляю из: $tool ($SCOPE)"
+  log "Removing from: $tool ($SCOPE)"
   set_target_dirs "$tool"
 
   shopt -s nullglob
@@ -175,7 +175,7 @@ for tool in "${TARGETS[@]}"; do
   done
   shopt -u nullglob
 
-  # Чистим пустые директории
+  # Clean up empty directories
   for dir in "$CMD_DIR" "$SKILL_DIR"; do
     if [[ -d "$dir" ]] && [[ -z "$(ls -A "$dir" 2>/dev/null)" ]]; then
       run rmdir "$dir"
@@ -183,7 +183,7 @@ for tool in "${TARGETS[@]}"; do
   done
 done
 
-log "Готово."
-[[ $DRY_RUN -eq 1 ]] && warn "Это был dry-run. Запусти без --dry-run для применения."
+log "Done."
+[[ $DRY_RUN -eq 1 ]] && warn "This was a dry-run. Re-run without --dry-run to apply."
 echo
-echo "Примечание: запись в AGENTS.md (для Codex) нужно удалить вручную при необходимости."
+echo "Note: the AGENTS.md entry (for Codex) has to be removed manually if needed."

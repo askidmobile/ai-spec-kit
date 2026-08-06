@@ -1,3 +1,8 @@
+---
+description: Answer a question from the compiled wiki instead of scanning raw source files.
+argument-hint: <question>
+---
+
 # Query Knowledge Base Wiki
 
 Search the compiled wiki to answer a question. Faster and cheaper than reading raw source files.

@@ -306,9 +306,10 @@ safety rule in `skills/wiki-compiler/SKILL.md`.
 
 ## Languages
 
-The command prompts are currently being translated to English for
-broader use. Russian variants are preserved in git history. PRs for
-other languages welcome.
+The kit — commands, skills, installer — is in English; the README also
+comes in Russian ([README.ru.md](./README.ru.md)). Earlier Russian
+variants of the prompts are preserved in git history. PRs for other
+languages welcome.
 
 ## Credits
 

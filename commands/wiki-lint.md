@@ -1,3 +1,7 @@
+---
+description: Run health checks on the compiled wiki and report issues.
+---
+
 # Lint Knowledge Base Wiki
 
 Run health checks on the compiled wiki to find issues.

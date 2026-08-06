@@ -1,3 +1,8 @@
+---
+description: Search all wiki articles for keywords, phrases, or topics.
+argument-hint: <query>
+---
+
 # Search the Wiki
 
 Search across all wiki articles for keywords, phrases, or topics.

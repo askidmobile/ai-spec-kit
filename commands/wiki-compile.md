@@ -1,3 +1,7 @@
+---
+description: Compile configured sources into a topic-based wiki (topics, concepts, INDEX) per .wiki-compiler.json.
+---
+
 # Compile Knowledge Base Wiki
 
 Compile all configured markdown source files into a topic-based wiki.

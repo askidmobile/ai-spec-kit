@@ -1,3 +1,7 @@
+---
+description: One-time migration — replace raw file reads in the CLAUDE.md/AGENTS.md startup sequence with wiki articles.
+---
+
 # Migrate to Wiki-First Startup
 
 One-time migration command. Analyzes your AGENTS.md or CLAUDE.md session startup sequence and shows which raw file reads can be replaced by wiki articles.

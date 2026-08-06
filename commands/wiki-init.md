@@ -1,3 +1,8 @@
+---
+description: Interactive setup of .wiki-compiler.json — mode, sources, output, article sections.
+argument-hint: "[--codebase | --knowledge]"
+---
+
 # Initialize Knowledge Base Wiki
 
 Interactive, conversational setup for a new knowledge base wiki. One question at a time, multiple choice when possible.

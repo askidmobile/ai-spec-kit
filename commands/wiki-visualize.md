@@ -1,3 +1,8 @@
+---
+description: Launch a local interactive knowledge-graph visualization of the compiled wiki.
+argument-hint: "[--port <number>]"
+---
+
 # Visualize Wiki Knowledge Graph
 
 Launch an interactive canvas-based knowledge graph of your compiled wiki. Topics appear as nodes, concepts as connecting edges. Click any node to read the article.

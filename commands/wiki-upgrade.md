@@ -1,35 +1,27 @@
-# Upgrade Wiki Compiler Plugin
+---
+description: Update the installed ai-spec-kit — git pull for symlink installs, reinstall for copies.
+---
 
-Update the plugin to the latest version from GitHub.
+# Upgrade ai-spec-kit
+
+Update the kit that provides these commands and skills.
 
 ## Instructions
 
-1. **Find the plugin source directory** by running:
+1. **Locate the kit clone.** Installed skills are normally symlinks into it — resolve one:
    ```bash
-   find ~/.claude/plugins -name "llm-wiki-compiler" -type d 2>/dev/null | head -1
+   readlink ~/.claude/skills/wiki-compiler || readlink .claude/skills/wiki-compiler
    ```
+   (For OpenCode/Codex check `~/.config/opencode/skills/` / `~/.codex/skills/` instead.)
+   The kit directory is two levels up from the resolved path.
 
-2. **Pull the latest changes:**
+2. **Symlink install** — pull and show what changed:
    ```bash
-   cd {plugin_directory} && git pull origin main
+   git -C {kit_dir} pull && git -C {kit_dir} log --oneline -5
    ```
+   Symlinked commands and skills pick up the update immediately; suggest restarting
+   the CLI session so already-loaded command definitions are refreshed.
 
-3. **Show what changed** by reading the git log:
-   ```bash
-   git log --oneline -5
-   ```
-
-4. **Tell the user to restart Claude Code** for the changes to take effect:
-
-   > Updated to latest version. Restart Claude Code to load the new commands and hooks.
-   > 
-   > What's new:
-   > {list the new commits since their previous version}
-
-## If git pull fails
-
-If the plugin was installed from marketplace (not a git clone), tell the user:
-```
-Run: claude plugin update llm-wiki-compiler
-Then restart Claude Code.
-```
+3. **Copy install** (readlink prints nothing) — tell the user to `git pull` their clone
+   of https://github.com/askidmobile/ai-spec-kit and re-run `./install.sh --force`
+   with their original target/scope flags.

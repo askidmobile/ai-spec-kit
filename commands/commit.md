@@ -1,3 +1,7 @@
+---
+description: Commit and push in one go — reviews status and diff, writes a conventional commit message in the repo's style.
+---
+
 # Git Commit
 
 Run the full automation for committing and pushing changes in git.

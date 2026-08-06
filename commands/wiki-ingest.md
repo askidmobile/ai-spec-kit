@@ -1,3 +1,8 @@
+---
+description: Interactively ingest one source file into the wiki — discuss takeaways, update affected topic articles.
+argument-hint: <file-path> [--quiet]
+---
+
 # Ingest a Single Source
 
 Interactive workflow for adding one source file to the wiki. The LLM reads the file, discusses key takeaways with the user, then updates relevant topic articles.
