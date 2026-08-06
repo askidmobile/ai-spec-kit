@@ -43,7 +43,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 
 | Хочется… | Без пакета | С пакетом |
 |---|---|---|
-| Стартовать новый проект | На словах, надеясь на лучшее | `/create-brief` — 4 блока структурированных вопросов → `docs/PROJECT-BRIEF.md` |
+| Стартовать новый проект | На словах, надеясь на лучшее | `/create-brief` — глубокое интервью с картой покрытия → `docs/brief/` (бриф + журнал решений + ресёрч) |
 | Сделать нетривиальную фичу | "Добавь авторизацию" → 600 строк нагаданного кода | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (авто-проход по фазам) → `/create-spec-review` |
 | Продолжить после сброса контекста | Пересказывать всё по памяти | AI читает `docs/specs/<feature>.md` + `docs/plans/<feature>.md` и продолжает |
 | Отслеживать что в работе | TODO разбросаны по комментариям | `TASKS.md` парсится `task-tracker`, синхронизирован с todo-листом IDE |
@@ -53,7 +53,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 ## Типичный день
 
 ```
-Пн  /create-brief         → docs/PROJECT-BRIEF.md      ─ видение, roadmap
+Пн  /create-brief         → docs/brief/                ─ видение, решения, roadmap
 Пн  /create-spec auth     → docs/specs/auth.md         ─ что и зачем
 Вт  /create-spec-plan auth → docs/plans/auth.md        ─ как, фазы, чеклист
 Ср  /create-spec-implement auth   ─ все фазы, каждая: реализация →
@@ -75,7 +75,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 
 | Команда | Назначение |
 |---|---|
-| `/create-brief` | Верхнеуровневый бриф проекта (видение, roadmap, стейкхолдеры, ограничения) |
+| `/create-brief` | Глубокое интервью с картой покрытия → папка `docs/brief/`: бриф, журнал интервью, журнал решений, ресёрч. Не генерирует, пока не закрыты все категории. `--fast`, `--update`, `--validate` |
 | `/create-spec` | Спецификация фичи — *что* и *зачем*, без деталей реализации |
 | `/create-spec-plan` | Детальный план реализации на основе спеки — *как*, фазы, чеклисты, реестр Tech Debt |
 | `/create-spec-implement` | Реализация фаз с авто-продвижением: валидация → self code review → commit на каждой фазе (`--pause` — останавливаться между фазами) |
@@ -88,6 +88,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 
 | Скил | Что делает |
 |---|---|
+| `project-brief` | Движок брифа за `/create-brief`: карта покрытия с критериями закрытия, laddering, research-петли, elicitation-меню по секциям, вывод в папку `docs/brief/`. |
 | `task-tracker` | Парсит и обновляет `TASKS.md` через `tasks.py`. Синхронизирует с IDE-todo. Восстанавливает контекст после сжатия. |
 | `wiki-compiler` | Компилирует документацию/код в topic-based wiki с coverage-тегами и cross-cutting concept-статьями. |
 
@@ -251,6 +252,9 @@ ai-spec-kit/
 │   ├── commit.md
 │   └── wiki-*.md
 ├── skills/
+│   ├── project-brief/
+│   │   ├── SKILL.md
+│   │   └── templates/
 │   ├── task-tracker/
 │   │   ├── SKILL.md
 │   │   └── scripts/tasks.py

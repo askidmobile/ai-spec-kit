@@ -219,7 +219,7 @@ for tool in "${TARGETS[@]}"; do
           echo ""
           echo "Available prompts: $CMD_DIR (create-brief, create-spec, create-spec-plan,"
           echo "create-spec-implement, create-spec-review, tasks, commit, wiki-*)."
-          echo "Skills: $SKILL_DIR (task-tracker, wiki-compiler)."
+          echo "Skills: $SKILL_DIR (project-brief, task-tracker, wiki-compiler)."
         } >> "$agents_md"
       else
         printf '   [dry-run] append section to %s\n' "$agents_md"

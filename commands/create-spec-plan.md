@@ -53,7 +53,7 @@ If the spec has deferred questions that block the plan:
    - Move the entry from "Deferred questions" to "Spec decisions" (`D-NNN | Q | A | YYYY-MM-DD`).
 4. Don't advance to Phase 2 until all blocking ones are closed.
 
-Also check the **brief** (`docs/PROJECT-BRIEF.md` or equivalent), if there's a link to it — it may also contain deferred questions that block the plan. Close them by the same protocol (update the brief).
+Also check the **brief** (`docs/brief/` folder: `open-questions.md` and `decisions.md`; or legacy single-file `docs/PROJECT-BRIEF.md`) — it may contain deferred questions that block the plan. Close them by the same protocol (update the brief's files). The brief's "Principles" section is binding for the plan's architecture choices.
 
 ---
 

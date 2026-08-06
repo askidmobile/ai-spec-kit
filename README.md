@@ -44,7 +44,7 @@ function") but breaks down at feature scale. Common problems:
 
 | You want to… | Without the kit | With the kit |
 |---|---|---|
-| Start a new project from scratch | Verbal pitch, hope for the best | `/create-brief` — 4 blocks of structured questions → `docs/PROJECT-BRIEF.md` |
+| Start a new project from scratch | Verbal pitch, hope for the best | `/create-brief` — coverage-driven deep interview → `docs/brief/` (brief + decision log + research) |
 | Build a non-trivial feature | "Hey can you add auth?" → 600 lines of guessed code | `/create-spec` → `/create-spec-plan` → `/create-spec-implement` (auto-advances through phases) → `/create-spec-review` |
 | Pick up after a context reset | Re-explain everything from memory | The AI reads `docs/specs/<feature>.md` + `docs/plans/<feature>.md` and resumes |
 | Track what's in flight | Scattered TODOs in code comments | `TASKS.md` parsed by `task-tracker`, in sync with the IDE todo list |
@@ -54,7 +54,7 @@ function") but breaks down at feature scale. Common problems:
 ## A typical day
 
 ```
-Mon  /create-brief        → docs/PROJECT-BRIEF.md       ─ vision, roadmap
+Mon  /create-brief        → docs/brief/                 ─ vision, decisions, roadmap
 Mon  /create-spec auth    → docs/specs/auth.md          ─ what & why
 Tue  /create-spec-plan auth → docs/plans/auth.md        ─ how, phases, checklist
 Wed  /create-spec-implement auth   ─ all phases, each one: implement →
@@ -77,7 +77,7 @@ edit it, grep it, diff it.
 
 | Command | Purpose |
 |---|---|
-| `/create-brief` | High-level project brief (vision, roadmap, stakeholders, constraints) |
+| `/create-brief` | Deep coverage-driven interview → `docs/brief/` folder: brief, interview log, decision log, research. Won't generate until every category is closed. `--fast`, `--update`, `--validate` |
 | `/create-spec` | Per-feature technical spec — *what* and *why*, no implementation detail |
 | `/create-spec-plan` | Detailed implementation plan based on the spec — *how*, phases, checklists, Tech Debt ledger |
 | `/create-spec-implement` | Executes phases with auto-advance: validate → self code review → commit per phase (`--pause` to stop between phases) |
@@ -90,6 +90,7 @@ edit it, grep it, diff it.
 
 | Skill | What it does |
 |---|---|
+| `project-brief` | Brief engine behind `/create-brief`: coverage map with exit criteria, laddering, research loops, per-section elicitation menu, `docs/brief/` folder output. |
 | `task-tracker` | Parses and updates `TASKS.md` via `tasks.py`. Keeps the in-IDE todo list in sync. Auto-restores context after compaction. |
 | `wiki-compiler` | Compiles documentation/code into a topic-based knowledge wiki with coverage tags and cross-cutting concept articles. |
 
@@ -252,6 +253,9 @@ ai-spec-kit/
 │   ├── commit.md
 │   └── wiki-*.md
 ├── skills/
+│   ├── project-brief/
+│   │   ├── SKILL.md
+│   │   └── templates/
 │   ├── task-tracker/
 │   │   ├── SKILL.md
 │   │   └── scripts/tasks.py

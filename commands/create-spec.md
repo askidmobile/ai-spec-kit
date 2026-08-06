@@ -21,7 +21,7 @@ Before asking questions, silently determine the project context:
 2. **Structure** — `ls` the project root, main directories
 3. **Existing specifications** — check for `docs/specs/`, `specs/`, `spec/`, `docs/` — where specs are already kept in this project
 4. **Tasks** — check for TASKS.md, TODO.md, or equivalents
-5. **Project brief** — check `docs/PROJECT-BRIEF.md` (or equivalent). If it exists — read the "Open questions / Deferred questions" section; those that block the current feature need to be closed in Phase 1.5.
+5. **Project brief** — check `docs/brief/PROJECT-BRIEF.md` (or legacy single-file `docs/PROJECT-BRIEF.md`). If it exists — also read `docs/brief/decisions.md` (binding BD-NNN decisions) and the brief's "Principles" section (must not be violated), plus `docs/brief/open-questions.md`; questions that block the current feature need to be closed in Phase 1.5.
 
 Remember the stack and structure — useful for asking smart questions.
 
@@ -33,7 +33,7 @@ If the brief contains open questions related to the current feature:
 
 1. Write them into a queue.
 2. Ask **one at a time** via `AskUserQuestion` (one tool call = one question) — follow the [interactive questions rules](#interactive-questions-rules-shared-block) below.
-3. After each answer — update `docs/PROJECT-BRIEF.md`: move the question from "Open" to "Brief decisions" with an entry `Q: … → A: … (YYYY-MM-DD)`.
+3. After each answer — update the brief: remove the question from `docs/brief/open-questions.md` and append a BD-NNN row to `docs/brief/decisions.md` (legacy single-file brief: move from "Open" to "Brief decisions") with `Q: … → A: … (YYYY-MM-DD)`.
 
 Don't advance to Phase 2 until the queue is empty (or the user has explicitly deferred the rest).
 
