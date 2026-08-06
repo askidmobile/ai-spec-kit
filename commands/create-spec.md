@@ -89,6 +89,7 @@ given everything you know from Phases 1-3:
 | Quality attributes | performance, security, reliability, a11y |
 | Integrations | external systems, failure modes, formats |
 | Edge cases & failures | negative paths, conflicts, limits |
+| Input data | encodings/UTF-8, non-Latin input, size limits |
 | Constraints | platform, compatibility, compliance |
 | Done-ness | are acceptance criteria testable |
 
