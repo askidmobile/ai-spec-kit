@@ -189,7 +189,7 @@ If validation fails → fix the errors and re-run validation.
 Run a self-review of all changes made in this phase:
 
 ```bash
-git diff HEAD
+git diff HEAD~1..HEAD
 ```
 
 Check the diff for:
