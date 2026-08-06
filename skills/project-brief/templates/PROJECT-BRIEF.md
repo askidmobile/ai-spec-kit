@@ -5,7 +5,8 @@
 > Companions: [decisions](decisions.md) · [open questions](open-questions.md) ·
 > [interview log](interview-log.md) · [research](research.md)
 
-<!-- Sections are advisory: merge or drop what a small project doesn't need.
+<!-- Sections are advisory: merge or drop what a small project doesn't need,
+     then renumber the remaining sections sequentially (no gaps).
      Target 2-4 pages; depth overflows into details/, linked in place. -->
 
 ## 1. Executive summary

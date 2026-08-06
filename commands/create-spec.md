@@ -274,7 +274,7 @@ graph TD
 6. **Out of scope** — explicitly bound the scope
 7. **Closed questions → section 12** (Spec decisions), **deferred → section 11** (with rationale). Unclosed-without-rationale items are forbidden in the final spec.
 8. **Testable done-ness** — acceptance and success criteria contain no bare adjectives ("fast", "gracefully", "user-friendly"): numbers or observable behavior only
-9. **Shape fit** — sections are advisory: for a small feature merge or drop what adds nothing (a bug-fix spec needs no UI section); don't over-formalize
+9. **Shape fit** — sections are advisory: for a small feature merge or drop what adds nothing (a bug-fix spec needs no UI section); don't over-formalize. After dropping/merging, **renumber the remaining sections sequentially** — no gaps. Pipeline commands reference sections by name, so renumbering is safe
 10. **One term — one name** — pick a canonical name per entity/concept and use it in every section (no synonym drift)
 
 ---

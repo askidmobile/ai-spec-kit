@@ -196,7 +196,8 @@ frictionless" · "Flexible AND performant" · "Fast to build AND future-proof" �
 
 Draft `PROJECT-BRIEF.md` section by section from the interview material
 (template: `templates/PROJECT-BRIEF.md`; sections are advisory — merge or drop
-for small projects, and use mermaid only where a diagram genuinely clarifies).
+for small projects, then renumber the remaining ones sequentially, no gaps;
+use mermaid only where a diagram genuinely clarifies).
 
 After showing each drafted section, offer an elicitation menu — 3-4 methods
 picked for that section from the catalog:
