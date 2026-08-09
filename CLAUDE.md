@@ -7,12 +7,15 @@ Codex. Everything is markdown prompts plus one Python script — no build step.
 
 - `commands/*.md` — slash-command definitions. Self-contained prompts with
   `description` / `argument-hint` frontmatter. Edit them as prose.
-- `skills/*/SKILL.md` — skills. `task-tracker/scripts/tasks.py` is the only
-  executable code in the kit (plus the zero-dependency
-  `wiki-compiler/visualize/server.js`).
+- `skills/*/SKILL.md` — skills. Three are core (`project-brief`,
+  `task-tracker`, `wiki-compiler`) with scripts/templates; the rest are
+  Warp-compatible wrappers generated from `commands/*.md` by
+  `scripts/generate-skills.sh` — re-run after editing command files.
 - `templates/` — starter files users copy into their projects.
 - `install.sh` / `uninstall.sh` — symlink or copy the above into CLI config
   directories (see README for the target matrix).
+- `scripts/generate-skills.sh` — regenerates skill wrappers from command
+  files. bash 3.2 compatible (no associative arrays).
 
 ## Rules
 

@@ -10,7 +10,7 @@ allowed-tools:
   - Read
   - Edit
   - Bash
-  - TodoWrite
+  - Write
 ---
 
 # Task Tracker — Managing tasks in TASKS.md
@@ -78,7 +78,7 @@ When the user asks to show tasks:
    - 🔄 In progress tasks — highlight as current
    - ✅ Done tasks — mark as completed
    - Show an overall summary (how many in progress, how many done)
-4. **Create a TodoWrite** with all 🔄 tasks — to track them in the UI
+4. **If TodoWrite/task tool is available**: sync 🔄 tasks to track them in the UI.
 
 ## Workflow: After context compaction
 
@@ -86,7 +86,7 @@ When the user asks to show tasks:
 
 1. Run `python3 <SKILL_DIR>/scripts/tasks.py active`
 2. Find tasks in 🔄 status
-3. Recreate TodoWrite with those tasks
+3. Recreate task tracker / TodoWrite with those tasks if available
 4. Tell the user which tasks are currently in progress
 5. Ask which task to continue
 

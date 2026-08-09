@@ -5,7 +5,7 @@
 A portable pack of slash-commands and skills that bring a **spec-driven
 workflow** — `brief → spec → plan → implement → review` — plus a few
 productivity utilities (`tasks`, `commit`, `wiki-*`) to any markdown-based
-AI CLI: **Claude Code**, **OpenCode**, **Codex**.
+AI CLI: **Claude Code**, **OpenCode**, **Codex**, **Warp**.
 
 > Drop the kit anywhere, run `./install.sh`, get the same set of `/commands`
 > and skills in every AI tool you use.
@@ -38,7 +38,7 @@ function") but breaks down at feature scale. Common problems:
    the codebase itself) into a topic-based knowledge base. The next session
    reads the wiki instead of re-scanning 200 files.
 4. **One install for any AI CLI.** Same commands work across Claude Code,
-   OpenCode and Codex with a single `./install.sh`.
+   OpenCode, Codex and Warp with a single `./install.sh`.
 
 ## What it helps with
 
@@ -94,6 +94,11 @@ edit it, grep it, diff it.
 | `task-tracker` | Parses and updates `TASKS.md` via `tasks.py`. Keeps the in-IDE todo list in sync. Auto-restores context after compaction. |
 | `wiki-compiler` | Compiles documentation/code into a topic-based knowledge wiki with coverage tags and cross-cutting concept articles. |
 
+> **Warp:** Warp has no slash-command directory — it loads only skills.
+> So for each command in `commands/` the kit generates a skill wrapper
+> (`skills/<name>/SKILL.md`) that Warp invokes as `/<name>`. Run
+> `scripts/generate-skills.sh` after editing `commands/*.md` to refresh them.
+
 ### Templates (`templates/`)
 
 - `TASKS.md` — starter task tracker with the correct table structure
@@ -103,7 +108,8 @@ edit it, grep it, diff it.
 
 - **bash** ≥ 3.2 (macOS default works)
 - **Python 3.8+** — only for the `task-tracker` skill
-- One of: Claude Code, OpenCode, Codex
+- **Node.js** — only for `wiki-visualize` (wiki graph visualization)
+- One of: Claude Code, OpenCode, Codex, Warp
 
 ## Install
 
@@ -117,9 +123,9 @@ cd ai-spec-kit
 
 The installer will ask:
 
-1. Which AI CLI: Claude Code / OpenCode / Codex / all three
-2. Scope: **user** (`~/.claude/`, `~/.config/opencode/`, `~/.codex/`) or
-   **project** (`<your-project>/.claude/`, etc.)
+1. Which AI CLI: Claude Code / OpenCode / Codex / Warp / all four
+2. Scope: **user** (`~/.claude/`, `~/.config/opencode/`, `~/.codex/`,
+   `~/.warp/`) or **project** (`<your-project>/.claude/`, etc.)
 3. Symlinks (recommended — `git pull` here updates all targets) or copies
 
 ### Non-interactive
@@ -145,10 +151,17 @@ The installer will ask:
 | Claude Code | `~/.claude/{commands,skills}/` | `.claude/{commands,skills}/` |
 | OpenCode | `~/.config/opencode/{commands,skills}/` | `.opencode/{commands,skills}/` |
 | Codex | `~/.codex/{prompts,skills}/` + line in `~/.codex/AGENTS.md` | `.codex/{prompts,skills}/` + line in `./AGENTS.md` |
+| Warp | `~/.warp/skills/` (skills only) | `.warp/skills/` (skills only) |
+| Antigravity (Gemini) | `~/.gemini/config/skills/` | `.gemini/config/skills/` |
 
 > Codex doesn't have native slash commands, so we store them as **prompts**
 > and append a short pointer to `AGENTS.md` so the agent discovers them on
 > session start.
+>
+> Warp has no slash-command directory — it scans `skills/` only. The
+> installer puts skill wrappers there, generated from `commands/*.md` by
+> `scripts/generate-skills.sh`. Invoke them as `/<skill-name>` (e.g.
+> `/commit`, `/wiki-search`).
 
 ## Make the AI actually suggest these commands
 
@@ -247,6 +260,8 @@ ai-spec-kit/
 ├── README.md / README.ru.md
 ├── LICENSE
 ├── install.sh / uninstall.sh
+├── scripts/
+│   └── generate-skills.sh    # skill wrapper generator from commands/*.md
 ├── commands/                  # markdown command definitions
 │   ├── create-brief.md
 │   ├── create-spec.md
@@ -256,17 +271,20 @@ ai-spec-kit/
 │   ├── tasks.md
 │   ├── commit.md
 │   └── wiki-*.md
-├── skills/
+├── skills/                    # core skills + skill wrappers for Warp
 │   ├── project-brief/
 │   │   ├── SKILL.md
 │   │   └── templates/
 │   ├── task-tracker/
 │   │   ├── SKILL.md
 │   │   └── scripts/tasks.py
-│   └── wiki-compiler/
-│       ├── SKILL.md
-│       ├── templates/
-│       └── visualize/
+│   ├── wiki-compiler/
+│   │   ├── SKILL.md
+│   │   ├── templates/
+│   │   └── visualize/
+│   ├── commit/                # wrapper over commands/commit.md
+│   ├── wiki-search/           # wrapper over commands/wiki-search.md
+│   └── …                      # and so on for each command
 └── templates/
     ├── TASKS.md
     └── wiki-compiler.example.json

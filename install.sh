@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# ai-spec-kit — install commands and skills for AI CLIs (Claude Code / OpenCode / Codex).
+# ai-spec-kit — install commands and skills for AI CLIs (Claude Code / OpenCode /
+# Codex / Warp).
 #
 # Usage:
 #   ./install.sh                         # interactive
 #   ./install.sh --target=claude --scope=user
 #   ./install.sh --target=claude,opencode --scope=project --project-dir=.
 #   ./install.sh --target=codex --scope=user --copy
+#   ./install.sh --target=warp --scope=user
 #
 # Flags:
-#   --target=claude|opencode|codex (comma-separated, or "all")
+#   --target=claude|opencode|codex|warp (comma-separated, or "all")
 #   --scope=user|project
 #   --project-dir=PATH     (for scope=project; defaults to the current directory)
 #   --copy                 (copy instead of symlinking)
@@ -88,12 +90,14 @@ if [[ $INTERACTIVE -eq 1 ]]; then
   printf 'Kit path: %s\n' "$KIT_DIR"
 
   choice=$(ask_choice "Which AI CLI to install for?" \
-    "Claude Code" "OpenCode" "Codex" "All three")
+    "Claude Code" "OpenCode" "Codex" "Warp" "Antigravity (Gemini)" "All five")
   case "$choice" in
     "Claude Code") TARGET="claude" ;;
     "OpenCode")    TARGET="opencode" ;;
     "Codex")       TARGET="codex" ;;
-    "All three")   TARGET="claude,opencode,codex" ;;
+    "Warp")        TARGET="warp" ;;
+    "Antigravity (Gemini)") TARGET="gemini" ;;
+    "All five")    TARGET="claude,opencode,codex,warp,gemini" ;;
   esac
 
   choice=$(ask_choice "Install scope?" \
@@ -121,7 +125,7 @@ fi
 [[ "$SCOPE" == "project" && ! -d "$PROJECT_DIR" ]] && err "Project directory not found: $PROJECT_DIR"
 
 # Normalize target
-if [[ "$TARGET" == "all" ]]; then TARGET="claude,opencode,codex"; fi
+if [[ "$TARGET" == "all" ]]; then TARGET="claude,opencode,codex,warp,gemini"; fi
 
 # --- resolve directories for target and scope ---
 # Sets the globals CMD_DIR and SKILL_DIR.
@@ -154,6 +158,24 @@ set_target_dirs() {
       else
         CMD_DIR="$PROJECT_DIR/.codex/prompts"
         SKILL_DIR="$PROJECT_DIR/.codex/skills"
+      fi
+      ;;
+    warp)
+      if [[ "$SCOPE" == "user" ]]; then
+        CMD_DIR=""
+        SKILL_DIR="$HOME/.warp/skills"
+      else
+        CMD_DIR=""
+        SKILL_DIR="$PROJECT_DIR/.warp/skills"
+      fi
+      ;;
+    gemini|antigravity)
+      if [[ "$SCOPE" == "user" ]]; then
+        CMD_DIR=""
+        SKILL_DIR="$HOME/.gemini/config/skills"
+      else
+        CMD_DIR=""
+        SKILL_DIR="$PROJECT_DIR/.gemini/config/skills"
       fi
       ;;
     *) err "Unknown target: $tool" ;;
@@ -191,15 +213,19 @@ for tool in "${TARGETS[@]}"; do
 
   set_target_dirs "$tool"
 
-  # Commands
-  log "  commands → $CMD_DIR"
-  shopt -s nullglob
-  for f in "$KIT_DIR"/commands/*.md; do
-    place "$f" "$CMD_DIR/$(basename "$f")"
-  done
+  # Commands (skip for Warp — it only loads skills)
+  if [[ -n "$CMD_DIR" ]]; then
+    log "  commands → $CMD_DIR"
+    shopt -s nullglob
+    for f in "$KIT_DIR"/commands/*.md; do
+      place "$f" "$CMD_DIR/$(basename "$f")"
+    done
+    shopt -u nullglob
+  fi
 
   # Skills (whole directories)
   log "  skills   → $SKILL_DIR"
+  shopt -s nullglob
   for d in "$KIT_DIR"/skills/*/; do
     name="$(basename "$d")"
     place "${d%/}" "$SKILL_DIR/$name"

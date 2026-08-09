@@ -73,12 +73,14 @@ ask_choice() {
 if [[ $INTERACTIVE -eq 1 ]]; then
   log "ai-spec-kit uninstaller"
   choice=$(ask_choice "Uninstall from?" \
-    "Claude Code" "OpenCode" "Codex" "All three")
+    "Claude Code" "OpenCode" "Codex" "Warp" "Antigravity (Gemini)" "All five")
   case "$choice" in
     "Claude Code") TARGET="claude" ;;
     "OpenCode")    TARGET="opencode" ;;
     "Codex")       TARGET="codex" ;;
-    "All three")   TARGET="claude,opencode,codex" ;;
+    "Warp")        TARGET="warp" ;;
+    "Antigravity (Gemini)") TARGET="gemini" ;;
+    "All five")    TARGET="claude,opencode,codex,warp,gemini" ;;
   esac
 
   choice=$(ask_choice "Scope?" \
@@ -96,7 +98,7 @@ fi
 
 [[ -z "$TARGET" ]] && err "Missing --target"
 [[ -z "$SCOPE"  ]] && err "Missing --scope"
-[[ "$TARGET" == "all" ]] && TARGET="claude,opencode,codex"
+[[ "$TARGET" == "all" ]] && TARGET="claude,opencode,codex,warp,gemini"
 
 set_target_dirs() {
   local tool="$1"
@@ -126,6 +128,24 @@ set_target_dirs() {
       else
         CMD_DIR="$PROJECT_DIR/.codex/prompts"
         SKILL_DIR="$PROJECT_DIR/.codex/skills"
+      fi
+      ;;
+    warp)
+      if [[ "$SCOPE" == "user" ]]; then
+        CMD_DIR=""
+        SKILL_DIR="$HOME/.warp/skills"
+      else
+        CMD_DIR=""
+        SKILL_DIR="$PROJECT_DIR/.warp/skills"
+      fi
+      ;;
+    gemini|antigravity)
+      if [[ "$SCOPE" == "user" ]]; then
+        CMD_DIR=""
+        SKILL_DIR="$HOME/.gemini/config/skills"
+      else
+        CMD_DIR=""
+        SKILL_DIR="$PROJECT_DIR/.gemini/config/skills"
       fi
       ;;
     *) err "Unknown target: $tool" ;;
@@ -164,10 +184,13 @@ for tool in "${TARGETS[@]}"; do
   set_target_dirs "$tool"
 
   shopt -s nullglob
-  for f in "$KIT_DIR"/commands/*.md; do
-    name="$(basename "$f")"
-    remove_if_ours "$CMD_DIR/$name" "$f"
-  done
+  # Commands (skip for Warp — CMD_DIR is empty)
+  if [[ -n "$CMD_DIR" ]]; then
+    for f in "$KIT_DIR"/commands/*.md; do
+      name="$(basename "$f")"
+      remove_if_ours "$CMD_DIR/$name" "$f"
+    done
+  fi
 
   for d in "$KIT_DIR"/skills/*/; do
     name="$(basename "$d")"
@@ -177,6 +200,7 @@ for tool in "${TARGETS[@]}"; do
 
   # Clean up empty directories
   for dir in "$CMD_DIR" "$SKILL_DIR"; do
+    [[ -z "$dir" ]] && continue
     if [[ -d "$dir" ]] && [[ -z "$(ls -A "$dir" 2>/dev/null)" ]]; then
       run rmdir "$dir"
     fi

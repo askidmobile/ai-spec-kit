@@ -5,7 +5,7 @@
 Переносимый набор slash-команд и скилов, который приносит **spec-driven
 workflow** — `brief → spec → plan → implement → review` — плюс несколько
 полезных утилит (`tasks`, `commit`, `wiki-*`) в любой markdown-совместимый
-AI CLI: **Claude Code**, **OpenCode**, **Codex**.
+AI CLI: **Claude Code**, **OpenCode**, **Codex**, **Warp**.
 
 > Положи пакет куда угодно, запусти `./install.sh` — получишь одинаковый
 > набор `/команд` и скилов во всех своих AI-инструментах.
@@ -37,7 +37,7 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
    сам исходный код) в topic-based базу знаний. Следующая сессия читает
    wiki вместо повторного сканирования 200 файлов.
 4. **Одна установка под любой AI CLI.** Те же команды работают в Claude
-   Code, OpenCode и Codex — один `./install.sh`.
+   Code, OpenCode, Codex и Warp — один `./install.sh`.
 
 ## Чем именно помогает
 
@@ -92,6 +92,12 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 | `task-tracker` | Парсит и обновляет `TASKS.md` через `tasks.py`. Синхронизирует с IDE-todo. Восстанавливает контекст после сжатия. |
 | `wiki-compiler` | Компилирует документацию/код в topic-based wiki с coverage-тегами и cross-cutting concept-статьями. |
 
+> **Warp:** у Warp нет директории для slash-команд — он загружает только
+> скилы. Поэтому для каждой команды из `commands/` пакет генерирует
+> skill-обёртку (`skills/<name>/SKILL.md`), которую Warp вызывает как
+> `/<name>`. Скрипт `scripts/generate-skills.sh` обновляет их после правки
+> `commands/*.md`.
+
 ### Шаблоны (`templates/`)
 
 - `TASKS.md` — стартовый трекер с правильной структурой таблиц
@@ -101,7 +107,8 @@ AI CLI: **Claude Code**, **OpenCode**, **Codex**.
 
 - **bash** ≥ 3.2 (стандартный macOS подходит)
 - **Python 3.8+** — только для скила `task-tracker`
-- Один из: Claude Code, OpenCode, Codex
+- **Node.js** — только для `wiki-visualize` (визуализация графа wiki)
+- Один из: Claude Code, OpenCode, Codex, Warp
 
 ## Установка
 
@@ -115,9 +122,9 @@ cd ai-spec-kit
 
 Скрипт спросит:
 
-1. В какой AI CLI: Claude Code / OpenCode / Codex / все три
-2. Scope: **user** (`~/.claude/`, `~/.config/opencode/`, `~/.codex/`) или
-   **project** (`<твой-проект>/.claude/`, и т.д.)
+1. В какой AI CLI: Claude Code / OpenCode / Codex / Warp / все четыре
+2. Scope: **user** (`~/.claude/`, `~/.config/opencode/`, `~/.codex/`,
+   `~/.warp/`) или **project** (`<твой-проект>/.claude/`, и т.д.)
 3. Симлинки (рекомендуется — `git pull` здесь обновляет все цели) или копии
 
 ### Без интерактива
@@ -143,10 +150,17 @@ cd ai-spec-kit
 | Claude Code | `~/.claude/{commands,skills}/` | `.claude/{commands,skills}/` |
 | OpenCode | `~/.config/opencode/{commands,skills}/` | `.opencode/{commands,skills}/` |
 | Codex | `~/.codex/{prompts,skills}/` + строка в `~/.codex/AGENTS.md` | `.codex/{prompts,skills}/` + строка в `./AGENTS.md` |
+| Warp | `~/.warp/skills/` (только скилы) | `.warp/skills/` (только скилы) |
+| Antigravity (Gemini) | `~/.gemini/config/skills/` | `.gemini/config/skills/` |
 
 > У Codex нет slash-команд, поэтому они кладутся как **prompts**, плюс
 > в `AGENTS.md` добавляется короткая ссылка — агент находит их сам при
 > старте сессии.
+>
+> У Warp нет директории slash-команд — он сканирует только `skills/`.
+> Поэтому инсталлер ставит туда skill-обёртки, сгенерированные из
+> `commands/*.md` скриптом `scripts/generate-skills.sh`. Вызываются через
+> `/<skill-name>` (например `/commit`, `/wiki-search`).
 
 ## Как заставить AI реально предлагать эти команды
 
@@ -246,6 +260,8 @@ ai-spec-kit/
 ├── README.md / README.ru.md
 ├── LICENSE
 ├── install.sh / uninstall.sh
+├── scripts/
+│   └── generate-skills.sh    # генератор skill-обёрток из commands/*.md
 ├── commands/                  # markdown-файлы команд
 │   ├── create-brief.md
 │   ├── create-spec.md
@@ -255,17 +271,20 @@ ai-spec-kit/
 │   ├── tasks.md
 │   ├── commit.md
 │   └── wiki-*.md
-├── skills/
+├── skills/                    # core skills + skill-обёртки для Warp
 │   ├── project-brief/
 │   │   ├── SKILL.md
 │   │   └── templates/
 │   ├── task-tracker/
 │   │   ├── SKILL.md
 │   │   └── scripts/tasks.py
-│   └── wiki-compiler/
-│       ├── SKILL.md
-│       ├── templates/
-│       └── visualize/
+│   ├── wiki-compiler/
+│   │   ├── SKILL.md
+│   │   ├── templates/
+│   │   └── visualize/
+│   ├── commit/                # обёртка над commands/commit.md
+│   ├── wiki-search/           # обёртка над commands/wiki-search.md
+│   └── …                      # и т.д. для каждой команды
 └── templates/
     ├── TASKS.md
     └── wiki-compiler.example.json
