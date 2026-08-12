@@ -1,7 +1,7 @@
 ---
 description: Manage project tasks in TASKS.md via the task-tracker skill. Shows active tasks, adds new ones, updates statuses, archives completed ones to TASKS_ARCHIVE.md.
 allowed-tools: Read, Edit, Bash, TodoWrite, AskUserQuestion
-argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX | archive-done | rotate-archive"
+argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | promote T-XXX | archive T-XXX | archive-done"
 ---
 
 # Task Management (TASKS)
@@ -55,6 +55,8 @@ Parse the JSON response and show the result to the user.
 | `update T-XXX "✅ Done"` | Update status |
 | `add "Title" "path/to/plan.md"` | Add to Active |
 | `add-backlog "Title" "path.md" "Note"` | Add to Backlog |
+| `promote T-XXX` | Backlog → Active, keeping the ID |
+| `split-backlog` | One-shot: move the Backlog section to `TASKS_BACKLOG.md` |
 | `archive T-XXX [T-YYY ...]` | Move rows to `TASKS_ARCHIVE.md` |
 | `archive-done` | Move every ✅ Done task to `TASKS_ARCHIVE.md` |
 | `migrate-archive` | One-shot: pull old in-file `## ✅ …` sections out to `TASKS_ARCHIVE.md` |
@@ -71,6 +73,9 @@ automatically on the first archive, no template needed.
 They also return an `archive` block once that file exists. A non-empty
 `stale_years` means the archive is holding past years — offer
 `rotate-archive`.
+
+If the backlog itself is a large share of `TASKS.md`, `split-backlog` moves it
+to `TASKS_BACKLOG.md`; all backlog commands then route there on their own.
 
 ## If TASKS.md doesn't exist yet
 

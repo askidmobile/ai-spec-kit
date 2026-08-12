@@ -77,7 +77,7 @@ class LegacyMigrationTests(unittest.TestCase):
             + "\n## ✅ Архивировано 2026-08-01\n\n- Old (T-000)\n"
             + "\n## ✅ Archived 2026-07-01\n\n- Older (T-000)\n"
         )
-        updated, legacy = tasks.extract_legacy_archive(content)
+        updated, legacy = tasks.extract_sections(content, tasks.ARCHIVE_HEADER)
         self.assertNotIn("Архивировано", updated)
         self.assertNotIn("## ✅", updated)
         self.assertIn("| T-001 |", updated)  # active table untouched
@@ -85,7 +85,7 @@ class LegacyMigrationTests(unittest.TestCase):
         self.assertIn("- Older (T-000)", legacy)
 
     def test_nothing_to_migrate(self):
-        _, legacy = tasks.extract_legacy_archive(BASE)
+        _, legacy = tasks.extract_sections(BASE, tasks.ARCHIVE_HEADER)
         self.assertEqual(legacy, "")
 
 
@@ -179,6 +179,54 @@ class LocalizedHeadingTests(unittest.TestCase):
         self.assertEqual([t["id"] for t in parsed["completed"]], ["T-001"])
         updated, new_id = tasks.add_task(content, "Новая", "—")
         self.assertIn(f"| {new_id} |", updated)
+
+
+class BacklogSplitTests(unittest.TestCase):
+    def test_section_moves_out_whole(self):
+        kept, section = tasks.extract_sections(BASE, tasks.BACKLOG_HEADER)
+        self.assertNotIn("📦", kept)
+        self.assertIn("| T-001 |", kept)  # Active untouched
+        self.assertTrue(section.startswith("## 📦 Backlog"))
+        self.assertIn("| ID | Date | Task | Plan | Note |", section)
+
+    def test_parsed_from_the_other_file(self):
+        kept, section = tasks.extract_sections(BASE, tasks.BACKLOG_HEADER)
+        external = section + "\n| T-009 | 2026-08-01 | Someday | — | maybe |\n"
+        parsed = tasks.parse_tasks(kept, external)
+        self.assertEqual(parsed["total_active"], 1)
+        self.assertEqual([t["id"] for t in parsed["backlog"]], ["T-009"])
+        self.assertEqual(parsed["backlog"][0]["note"], "maybe")
+
+    def test_localized_backlog_heading_moves(self):
+        content = BASE.replace("## 📦 Backlog", "## 📦 Backlog (Future)")
+        _, section = tasks.extract_sections(content, tasks.BACKLOG_HEADER)
+        self.assertIn("(Future)", section)
+
+
+class PromoteTests(unittest.TestCase):
+    def test_note_column_becomes_status(self):
+        row = "| T-009 | 2026-08-01 | Someday | [`p.md`](docs/p.md) | maybe later |"
+        promoted = tasks.promote_row(row)
+        self.assertIn("| T-009 |", promoted)
+        self.assertIn("[`p.md`](docs/p.md)", promoted)  # plan link kept
+        self.assertIn("📝 Planning", promoted)
+        self.assertNotIn("maybe later", promoted)
+
+    def test_short_row_is_padded(self):
+        # Backlog rows often leave the Note cell off entirely.
+        promoted = tasks.promote_row("| T-009 | 2026-08-01 | Someday | — |")
+        self.assertEqual(len(tasks.parse_table_row(promoted)), 5)
+
+    def test_row_lands_in_the_active_table(self):
+        kept, section = tasks.extract_sections(BASE, tasks.BACKLOG_HEADER)
+        external = section + "\n| T-009 | 2026-08-01 | Someday | — | maybe |\n"
+        stripped, rows, found = tasks.pop_task_rows(external, ["T-009"])
+        self.assertEqual(found, ["T-009"])
+        updated = tasks.insert_row(kept, tasks.promote_row(rows[0]), tasks.ACTIVE_SECTION)
+        parsed = tasks.parse_tasks(updated, stripped)
+        self.assertEqual([t["id"] for t in parsed["active"]], ["T-001", "T-009"])
+        self.assertEqual(parsed["active"][1]["status"], "📝 Planning")
+        self.assertEqual(parsed["backlog"], [])
 
 
 class AddTests(unittest.TestCase):

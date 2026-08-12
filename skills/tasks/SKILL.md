@@ -7,7 +7,7 @@ description: Manage project tasks in TASKS.md via the task-tracker skill. Shows 
 
 Invoke the **task-tracker** skill and run it for: $ARGUMENTS
 
-Arguments: list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX | archive-done | rotate-archive
+Arguments: list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | promote T-XXX | archive T-XXX | archive-done
 
 > This is a Warp-compatible wrapper around the task-tracker skill.
 > In Claude Code / OpenCode / Codex the same workflow is the

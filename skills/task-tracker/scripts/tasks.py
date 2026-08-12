@@ -4,8 +4,8 @@ Parser and manager for TASKS.md.
 
 Reads markdown tables, returns JSON. Updates statuses, adds and archives tasks.
 
-Completed tasks move out to TASKS_ARCHIVE.md (next to TASKS.md) so the
-working file stays small.
+Completed tasks move out to TASKS_ARCHIVE.md, and the backlog can move to
+TASKS_BACKLOG.md, so the working file stays small.
 
 Usage:
     python3 tasks.py list                          # All tasks (active + backlog)
@@ -19,6 +19,8 @@ Usage:
     python3 tasks.py archive-done                  # Archive every ✅ Done task
     python3 tasks.py migrate-archive               # Move in-file archive sections out
     python3 tasks.py rotate-archive                # Split past years into TASKS_ARCHIVE_YYYY.md
+    python3 tasks.py split-backlog                 # Move Backlog into TASKS_BACKLOG.md
+    python3 tasks.py promote T-001                 # Backlog -> Active
     python3 tasks.py next-id                       # Next free ID
 """
 
@@ -55,6 +57,7 @@ def find_tasks_md() -> str:
 
 
 ARCHIVE_NAME = "TASKS_ARCHIVE.md"
+BACKLOG_NAME = "TASKS_BACKLOG.md"
 
 # Overflow limits — past these the working file is too big to keep in context
 # comfortably, and `archive-done` should be offered.
@@ -78,6 +81,20 @@ def read_archive(tasks_path: str) -> str:
     """The current archive only — what `archive` appends to."""
     path = archive_md_path(tasks_path)
     return read_file(path) if os.path.isfile(path) else ""
+
+
+def backlog_md_path(tasks_path: str) -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(tasks_path)), BACKLOG_NAME)
+
+
+def read_backlog(tasks_path: str) -> Optional[str]:
+    """Backlog text when it lives in its own file, else None — it's still in TASKS.md.
+
+    Everything backlog-related routes through this: a project that never ran
+    `split-backlog` keeps working unchanged.
+    """
+    path = backlog_md_path(tasks_path)
+    return read_file(path) if os.path.isfile(path) else None
 
 
 def read_archive_all(tasks_path: str) -> str:
@@ -160,13 +177,15 @@ def parse_section(
     return headers, rows, start_idx, end_idx
 
 
-def parse_tasks(content: str) -> dict:
-    """Parse all sections of TASKS.md."""
+def parse_tasks(content: str, backlog_content: Optional[str] = None) -> dict:
+    """Parse all sections. `backlog_content` — TASKS_BACKLOG.md, when split off."""
     # Sections are matched by their emoji only — the heading text is free-form
     # and often localized ("## 🚀 Активные задачи").
     _, active_rows, _, _ = parse_section(content, ACTIVE_SECTION)
 
-    _, backlog_rows, _, _ = parse_section(content, BACKLOG_SECTION)
+    _, backlog_rows, _, _ = parse_section(
+        content if backlog_content is None else backlog_content, BACKLOG_SECTION
+    )
 
     def row_to_task(row: list[str], section: str) -> dict:
         # Columns are read by position, not by header name: the layout is fixed
@@ -261,34 +280,8 @@ def update_task_status(
     return "not_found", ""
 
 
-def add_task(
-    content: str,
-    title: str,
-    plan_path: str,
-    section: str = "active",
-    note: str = "",
-    archive_content: str = "",
-) -> tuple[str, str]:
-    """Add a new task to the given section."""
-    next_id = get_next_id(content, archive_content)
-    today = date.today().strftime("%Y-%m-%d")
-    title = esc_cell(title)
-    note = esc_cell(note)
-
-    if plan_path and plan_path != "—":
-        plan_name = os.path.basename(plan_path)
-        plan_cell = f"[`{plan_name}`]({plan_path})"
-    else:
-        plan_cell = "—"
-
-    if section == "active":
-        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | 📝 Planning |"
-        pattern = ACTIVE_SECTION
-    else:
-        note_text = note if note else ""
-        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | {note_text} |"
-        pattern = BACKLOG_SECTION
-
+def insert_row(content: str, row: str, pattern: str) -> str:
+    """Append a table row to the section's table. Returns "" if there's no table."""
     lines = content.split("\n")
     in_section = False
     last_table_row = -1
@@ -312,10 +305,41 @@ def add_task(
     if last_table_row < 1:
         # Section (or its table) not found — report failure instead of
         # silently returning the file unchanged.
-        return "", ""
-    lines.insert(last_table_row + 1, new_row)
+        return ""
+    lines.insert(last_table_row + 1, row)
+    return "\n".join(lines)
 
-    return "\n".join(lines), next_id
+
+def add_task(
+    content: str,
+    title: str,
+    plan_path: str,
+    section: str = "active",
+    note: str = "",
+    next_id: str = "",
+) -> tuple[str, str]:
+    """Add a new task to the given section."""
+    next_id = next_id or get_next_id(content)
+    today = date.today().strftime("%Y-%m-%d")
+    title = esc_cell(title)
+    note = esc_cell(note)
+
+    if plan_path and plan_path != "—":
+        plan_name = os.path.basename(plan_path)
+        plan_cell = f"[`{plan_name}`]({plan_path})"
+    else:
+        plan_cell = "—"
+
+    if section == "active":
+        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | 📝 Planning |"
+        pattern = ACTIVE_SECTION
+    else:
+        note_text = note if note else ""
+        new_row = f"| {next_id} | {today} | {title} | {plan_cell} | {note_text} |"
+        pattern = BACKLOG_SECTION
+
+    updated = insert_row(content, new_row, pattern)
+    return (updated, next_id) if updated else ("", "")
 
 
 ARCHIVE_INTRO = (
@@ -436,20 +460,20 @@ def stale_archive_years(archive_content: str, keep_year: str) -> list[str]:
     return sorted(split_archive_by_year(archive_content, keep_year)[1])
 
 
-def extract_legacy_archive(content: str) -> tuple[str, str]:
-    """Cut every '## ✅ …' section out of TASKS.md (the old in-file archive).
+def extract_sections(content: str, marker: str) -> tuple[str, str]:
+    """Cut every '## <marker>…' section out. Returns (rest, cut_text).
 
     Matches on the emoji alone — heading text is localized in real projects
-    ("## ✅ Архивировано 2026-08-01").
+    ("## ✅ Архивировано 2026-08-01", "## 📦 Backlog (Future)").
     """
     kept: list[str] = []
     moved: list[str] = []
-    in_archive = False
+    inside = False
 
     for line in content.split("\n"):
         if line.strip().startswith("## "):
-            in_archive = line.strip().startswith(ARCHIVE_HEADER)
-        (moved if in_archive else kept).append(line)
+            inside = line.strip().startswith(marker)
+        (moved if inside else kept).append(line)
 
     return "\n".join(kept).rstrip("\n") + "\n", "\n".join(moved).strip("\n")
 
@@ -483,7 +507,7 @@ def overflow_report(content: str, parsed: dict) -> dict:
 
 def cmd_list(tasks_path: str, filter_section: Optional[str] = None):
     content = read_file(tasks_path)
-    result = parse_tasks(content)
+    result = parse_tasks(content, read_backlog(tasks_path))
 
     if filter_section == "active":
         output = {
@@ -531,7 +555,7 @@ def cmd_list(tasks_path: str, filter_section: Optional[str] = None):
 
 def cmd_show(tasks_path: str, task_id: str):
     content = read_file(tasks_path)
-    result = parse_tasks(content)
+    result = parse_tasks(content, read_backlog(tasks_path))
 
     all_tasks = result["active"] + result["backlog"]
     found = [t for t in all_tasks if t.get("id") == task_id]
@@ -547,14 +571,20 @@ def cmd_update(tasks_path: str, task_id: str, new_status: str):
     content = read_file(tasks_path)
     result, updated = update_task_status(content, task_id, new_status)
 
+    # With the backlog split off, TASKS.md no longer has a row to recognise —
+    # look it up there so the answer stays "it's in Backlog", not "not found".
+    backlog = read_backlog(tasks_path)
+    if result == "not_found" and backlog and f"| {task_id} |" in backlog:
+        result = "backlog"
+
     if result == "backlog":
         print(
             json.dumps(
                 {
                     "error": (
                         f"{task_id} is in Backlog, which has no Status column "
-                        f"(its last column is Note). Move it to Active first "
-                        f"or edit the Note directly."
+                        f"(its last column is Note). Run `promote {task_id}` "
+                        f"to move it to Active first."
                     )
                 },
                 ensure_ascii=False,
@@ -588,24 +618,31 @@ def cmd_add(
     note: str = "",
 ):
     content = read_file(tasks_path)
-    updated, new_id = add_task(
-        content, title, plan_path, section, note, read_archive_all(tasks_path)
+    backlog = read_backlog(tasks_path)
+    external_backlog = section == "backlog" and backlog is not None
+
+    # IDs are global: scan tasks, the split-off backlog, and every archive.
+    next_id = get_next_id(
+        content + "\n" + (backlog or ""), read_archive_all(tasks_path)
     )
+    target = backlog if external_backlog else content
+    updated, new_id = add_task(target, title, plan_path, section, note, next_id)
     if not updated:
+        where = BACKLOG_NAME if external_backlog else os.path.basename(tasks_path)
         header = "## 🚀 Active tasks" if section == "active" else "## 📦 Backlog"
         print(
             json.dumps(
                 {
                     "error": (
                         f"Section '{header}' (with its table) not found in "
-                        f"TASKS.md — copy the structure from templates/TASKS.md"
+                        f"{where} — copy the structure from templates/TASKS.md"
                     )
                 },
                 ensure_ascii=False,
             )
         )
         sys.exit(1)
-    write_file(tasks_path, updated)
+    write_file(backlog_md_path(tasks_path) if external_backlog else tasks_path, updated)
     print(
         json.dumps(
             {
@@ -624,6 +661,16 @@ def cmd_add(
 def cmd_archive(tasks_path: str, task_ids: list[str]):
     content = read_file(tasks_path)
     updated, rows, found = pop_task_rows(content, task_ids)
+
+    # A dropped idea gets archived straight from the backlog file too.
+    backlog = read_backlog(tasks_path)
+    if backlog is not None and len(found) < len(task_ids):
+        rest = [t for t in task_ids if t not in found]
+        bl_updated, bl_rows, bl_found = pop_task_rows(backlog, rest)
+        if bl_found:
+            write_file(backlog_md_path(tasks_path), bl_updated)
+            rows += bl_rows
+            found += bl_found
 
     missing = [t for t in task_ids if t not in found]
     if not found:
@@ -652,6 +699,104 @@ def cmd_archive(tasks_path: str, task_ids: list[str]):
     )
 
 
+def cmd_split_backlog(tasks_path: str):
+    """One-shot: move the '## 📦 Backlog' section into TASKS_BACKLOG.md."""
+    path = backlog_md_path(tasks_path)
+    if os.path.isfile(path):
+        print(
+            json.dumps(
+                {"error": f"{BACKLOG_NAME} already exists"}, ensure_ascii=False
+            )
+        )
+        sys.exit(1)
+
+    content = read_file(tasks_path)
+    kept, section = extract_sections(content, BACKLOG_HEADER)
+    if not section.strip():
+        print(
+            json.dumps(
+                {"error": "No '## 📦 Backlog' section in TASKS.md"},
+                ensure_ascii=False,
+            )
+        )
+        sys.exit(1)
+
+    write_file(
+        path,
+        f"# Backlog\n"
+        f"\n"
+        f"> Managed by the `task-tracker` skill (`tasks.py add-backlog` /\n"
+        f"> `promote`). Split off `TASKS.md` to keep it out of the context\n"
+        f"> of everyday work.\n"
+        f"\n" + section + "\n",
+    )
+    write_file(tasks_path, kept)
+    print(
+        json.dumps(
+            {
+                "success": True,
+                "backlog_file": BACKLOG_NAME,
+                "moved_rows": section.count("\n| T-"),
+                "message": f"Backlog moved to {BACKLOG_NAME}",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
+def promote_row(row: str) -> str:
+    """Turn a Backlog row into an Active one: the Note column becomes Status."""
+    cells = parse_table_row(row)
+    cells += [""] * (5 - len(cells))
+    cells[4] = "📝 Planning"
+    return "| " + " | ".join(esc_cell(c) for c in cells) + " |"
+
+
+def cmd_promote(tasks_path: str, task_id: str):
+    """Backlog → Active, keeping the ID."""
+    content = read_file(tasks_path)
+    backlog = read_backlog(tasks_path)
+    same_file = backlog is None
+
+    stripped, rows, found = pop_task_rows(content if same_file else backlog, [task_id])
+    if not found:
+        print(
+            json.dumps(
+                {"error": f"Task {task_id} not found in Backlog"}, ensure_ascii=False
+            )
+        )
+        sys.exit(1)
+
+    updated = insert_row(stripped if same_file else content, promote_row(rows[0]), ACTIVE_SECTION)
+    if not updated:
+        print(
+            json.dumps(
+                {"error": "No '## 🚀 Active tasks' table in TASKS.md"},
+                ensure_ascii=False,
+            )
+        )
+        sys.exit(1)
+
+    if not same_file:
+        write_file(backlog_md_path(tasks_path), stripped)
+    write_file(tasks_path, updated)
+
+    cells = parse_table_row(rows[0])
+    print(
+        json.dumps(
+            {
+                "success": True,
+                "task_id": task_id,
+                "title": cells[2] if len(cells) > 2 else "",
+                "message": f"{task_id} promoted to Active",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
 def cmd_archive_done(tasks_path: str):
     """Overflow relief: every ✅ task in Active goes to the archive file."""
     content = read_file(tasks_path)
@@ -672,7 +817,7 @@ def cmd_archive_done(tasks_path: str):
 def cmd_migrate_archive(tasks_path: str):
     """One-shot: pull the old in-file '## ✅ …' sections out into TASKS_ARCHIVE.md."""
     content = read_file(tasks_path)
-    updated, legacy = extract_legacy_archive(content)
+    updated, legacy = extract_sections(content, ARCHIVE_HEADER)
 
     if not legacy.strip():
         print(
@@ -749,7 +894,7 @@ def main():
         print(
             json.dumps(
                 {
-                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, archive-done, migrate-archive, rotate-archive, next-id"
+                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, promote, archive, archive-done, migrate-archive, rotate-archive, split-backlog, next-id"
                 },
                 ensure_ascii=False,
             )
@@ -832,6 +977,19 @@ def main():
 
     elif command == "rotate-archive":
         cmd_rotate_archive(tasks_path)
+
+    elif command == "split-backlog":
+        cmd_split_backlog(tasks_path)
+
+    elif command == "promote":
+        if len(sys.argv) < 3:
+            print(
+                json.dumps(
+                    {"error": "Specify a task ID: promote T-001"}, ensure_ascii=False
+                )
+            )
+            sys.exit(1)
+        cmd_promote(tasks_path, sys.argv[2])
 
     elif command == "next-id":
         cmd_next_id(tasks_path)

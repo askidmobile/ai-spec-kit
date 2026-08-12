@@ -25,7 +25,8 @@ Two files, both in the project root:
 
 | File | Holds | Written by |
 |------|-------|------------|
-| `TASKS.md` | Active tasks + Backlog — what's in flight | `add`, `update` |
+| `TASKS.md` | Active tasks (and Backlog, until it's split off) | `add`, `update`, `promote` |
+| `TASKS_BACKLOG.md` | Backlog — someday/maybe, once `split-backlog` ran | `add-backlog`, `promote` |
 | `TASKS_ARCHIVE.md` | Everything finished this year, in dated sections, newest on top | `archive`, `archive-done`, `migrate-archive` |
 | `TASKS_ARCHIVE_YYYY.md` | Past years, split off once the year turns | `rotate-archive` |
 
@@ -74,7 +75,22 @@ python3 <SKILL_DIR>/scripts/tasks.py add "Task title" "docs/plans/plan.md"
 
 # Add a task to Backlog
 python3 <SKILL_DIR>/scripts/tasks.py add-backlog "Title" "docs/plans/plan.md" "Note"
+
+# Backlog → Active (keeps the ID, the Note column becomes 📝 Planning)
+python3 <SKILL_DIR>/scripts/tasks.py promote T-009
 ```
+
+### Splitting the backlog off
+
+```bash
+# One-shot: move the "## 📦 Backlog" section into TASKS_BACKLOG.md
+python3 <SKILL_DIR>/scripts/tasks.py split-backlog
+```
+
+Worth doing when the backlog is a meaningful share of `TASKS.md` — it's
+someday/maybe work that isn't needed in context for today's task. Every
+backlog command routes through the file automatically, so a project that
+never splits keeps working exactly as before.
 
 ### Archiving (moves rows out to `TASKS_ARCHIVE.md`)
 
@@ -198,7 +214,8 @@ can be used alongside `tasks.py` — see `YTTRI.md` in this skill's directory.
 
 ## Rules
 
-1. **Don't edit TASKS.md or TASKS_ARCHIVE.md by hand** — always use `tasks.py`
+1. **Don't edit any of the TASKS*.md files by hand** — always use `tasks.py`
+   (moving a task between them is `promote` / `archive`, not cut-and-paste)
 2. **Always sync TodoWrite** with the current tasks in TASKS.md
 3. **After compaction** — first thing, reread tasks via `tasks.py active`
 4. **New plan = new entry** in TASKS.md via `tasks.py add`
