@@ -13,6 +13,8 @@
 | ID | Date | Task | Plan | Note |
 |----|------|------|------|------|
 
-## ✅ Archived
-
-<!-- Completed tasks land here under dated sections: `## ✅ Archived YYYY-MM-DD` followed by a bullet list. -->
+<!--
+Completed tasks don't stay here — `/tasks archive T-XXX` (or `archive-done`)
+moves their rows to `TASKS_ARCHIVE.md`, which is created on first use.
+Keep this file small: it's read into context every session.
+-->

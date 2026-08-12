@@ -2,7 +2,8 @@
 name: task-tracker
 description: >-
   Manage project tasks in TASKS.md. Parses markdown tables, returns JSON,
-  updates statuses, adds and archives tasks. Syncs with TodoWrite.
+  updates statuses, adds tasks, and archives completed ones out to
+  TASKS_ARCHIVE.md when the file overflows. Syncs with TodoWrite.
   Activates on: "tasks", "task status", "what's left", "update TASKS",
   "show tasks", "next task", "task tracker", and after context compaction.
   Does NOT activate for: regular code discussions, git operations, builds.
@@ -19,7 +20,16 @@ Script: `<SKILL_DIR>/scripts/tasks.py`, where `<SKILL_DIR>` is this skill's
 installed directory — e.g. `~/.claude/skills/task-tracker` (user scope) or
 `.claude/skills/task-tracker` (project scope). Substitute the real path in
 every command below.
-Tasks file: `TASKS.md` (in the project root)
+
+Two files, both in the project root:
+
+| File | Holds | Written by |
+|------|-------|------------|
+| `TASKS.md` | Active tasks + Backlog — what's in flight | `add`, `update` |
+| `TASKS_ARCHIVE.md` | Everything finished, in dated sections, newest on top | `archive`, `archive-done`, `migrate-archive` |
+
+`TASKS.md` is the file that gets read into context on every session, so it has
+to stay small. Completed tasks belong in the archive file, not in it.
 
 ## When to activate
 
@@ -63,10 +73,24 @@ python3 <SKILL_DIR>/scripts/tasks.py add "Task title" "docs/plans/plan.md"
 
 # Add a task to Backlog
 python3 <SKILL_DIR>/scripts/tasks.py add-backlog "Title" "docs/plans/plan.md" "Note"
-
-# Move to archive
-python3 <SKILL_DIR>/scripts/tasks.py archive T-001
 ```
+
+### Archiving (moves rows out to `TASKS_ARCHIVE.md`)
+
+```bash
+# One or several tasks
+python3 <SKILL_DIR>/scripts/tasks.py archive T-001 T-002
+
+# Every ✅ Done task at once — the usual answer to overflow
+python3 <SKILL_DIR>/scripts/tasks.py archive-done
+
+# One-shot for older projects: pull the in-file "## ✅ Archived …" sections
+# out of TASKS.md into TASKS_ARCHIVE.md
+python3 <SKILL_DIR>/scripts/tasks.py migrate-archive
+```
+
+The whole table row travels, so the plan link and the final status survive.
+IDs are never reused — `next-id` scans the archive too.
 
 ## Workflow: Show tasks
 
@@ -79,6 +103,27 @@ When the user asks to show tasks:
    - ✅ Done tasks — mark as completed
    - Show an overall summary (how many in progress, how many done)
 4. **If TodoWrite/task tool is available**: sync 🔄 tasks to track them in the UI.
+5. **Check the `overflow` block** in the JSON — see below.
+
+## Workflow: Overflow
+
+`list` and `active` return an `overflow` block:
+
+```json
+"overflow": {"active_rows": 99, "done_rows": 30, "bytes": 423660, "over_limit": true, "hint": "..."}
+```
+
+`over_limit` trips past 40 active rows, 10 ✅ rows, or 100 KB. When it's true:
+
+1. Show the user the numbers and the `hint`.
+2. If `done_rows > 0` — offer `archive-done`; it moves every ✅ task out in
+   one go. Don't run it silently, archiving is the user's call.
+3. If the file still has `## ✅ …` sections inside it (a project that predates
+   `TASKS_ARCHIVE.md`) — offer `migrate-archive` first.
+4. If `done_rows` is 0 and it's still over — nothing to archive; the active
+   rows need triage (close, split, or drop to Backlog).
+
+Never trim `TASKS.md` by hand to make it fit — archiving is how it shrinks.
 
 ## Workflow: After context compaction
 
@@ -111,7 +156,9 @@ When a task is done:
 
 1. Run: `python3 <SKILL_DIR>/scripts/tasks.py update T-XXX "✅ Done"`
 2. Update TodoWrite — mark the task as completed
-3. If the plan can be archived: `python3 <SKILL_DIR>/scripts/tasks.py archive T-XXX`
+3. Once the result is confirmed (tests pass, change shipped), move the row out:
+   `python3 <SKILL_DIR>/scripts/tasks.py archive T-XXX`. A ✅ row left in
+   Active is what makes the file overflow later.
 
 ## Task ID format
 
@@ -137,8 +184,10 @@ can be used alongside `tasks.py` — see `YTTRI.md` in this skill's directory.
 
 ## Rules
 
-1. **Don't edit TASKS.md by hand** — always use the `tasks.py` script
+1. **Don't edit TASKS.md or TASKS_ARCHIVE.md by hand** — always use `tasks.py`
 2. **Always sync TodoWrite** with the current tasks in TASKS.md
 3. **After compaction** — first thing, reread tasks via `tasks.py active`
 4. **New plan = new entry** in TASKS.md via `tasks.py add`
-5. **Completion = status update** via `tasks.py update`
+5. **Completion = status update** via `tasks.py update`, then `archive`
+6. **`over_limit` = report it** and offer `archive-done` — don't ignore it and
+   don't archive without asking

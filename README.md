@@ -101,7 +101,8 @@ edit it, grep it, diff it.
 
 ### Templates (`templates/`)
 
-- `TASKS.md` — starter task tracker with the correct table structure
+- `TASKS.md` — starter task tracker with the correct table structure (the
+  archive file `TASKS_ARCHIVE.md` is created by `/tasks archive`)
 - `wiki-compiler.example.json` — example config for the wiki compiler
 
 ## Requirements
@@ -213,8 +214,15 @@ of project initialization.
 /tasks                          # show active tasks
 /tasks add "Fix login bug" "docs/plans/fix-login.md"
 /tasks update T-001 "🔄 In progress"
-/tasks archive T-001
+/tasks archive T-001             # row moves to TASKS_ARCHIVE.md
+/tasks archive-done              # every ✅ task at once
 ```
+
+`TASKS.md` is read into context every session, so it has to stay small.
+`/tasks` reports when it overflows (40+ active rows, 10+ done, or 100 KB) and
+offers `archive-done`; finished tasks live in `TASKS_ARCHIVE.md`, created on
+first use. A project that predates it: `/tasks migrate-archive` moves the old
+in-file `## ✅ …` sections out once.
 
 If `TASKS.md` doesn't exist yet:
 

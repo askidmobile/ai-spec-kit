@@ -1,7 +1,7 @@
 ---
-description: Manage project tasks in TASKS.md via the task-tracker skill. Shows active tasks, adds new ones, updates statuses, archives completed.
+description: Manage project tasks in TASKS.md via the task-tracker skill. Shows active tasks, adds new ones, updates statuses, archives completed ones to TASKS_ARCHIVE.md.
 allowed-tools: Read, Edit, Bash, TodoWrite, AskUserQuestion
-argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX"
+argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX | archive-done"
 ---
 
 # Task Management (TASKS)
@@ -26,10 +26,12 @@ Where `<SKILL_DIR>` is the path to the `task-tracker` skill (for Claude Code tha
 Then:
 1. Output the list in a human-readable format (🔄 in progress, ✅ done).
 2. Create a TodoWrite with all tasks in 🔄 status.
-3. Ask the user what to do next (4 options via `AskUserQuestion`):
+3. If the response's `overflow.over_limit` is `true` — report the numbers and
+   the `hint`, and put archiving first among the options below.
+4. Ask the user what to do next (4 options via `AskUserQuestion`):
    - Continue work on the current 🔄 task
    - Create a new task
-   - Archive completed ones
+   - Archive completed ones (`archive-done`)
    - Show the backlog
 
 ## If arguments are given
@@ -53,8 +55,17 @@ Parse the JSON response and show the result to the user.
 | `update T-XXX "✅ Done"` | Update status |
 | `add "Title" "path/to/plan.md"` | Add to Active |
 | `add-backlog "Title" "path.md" "Note"` | Add to Backlog |
-| `archive T-XXX` | Move to archive |
+| `archive T-XXX [T-YYY ...]` | Move rows to `TASKS_ARCHIVE.md` |
+| `archive-done` | Move every ✅ Done task to `TASKS_ARCHIVE.md` |
+| `migrate-archive` | One-shot: pull old in-file `## ✅ …` sections out to `TASKS_ARCHIVE.md` |
 | `next-id` | Get the next free ID |
+
+## Overflow
+
+`list`/`active` return an `overflow` block (`active_rows`, `done_rows`,
+`bytes`, `over_limit`, `hint`). If `over_limit` is `true` — show it and offer
+`archive-done`; never trim `TASKS.md` by hand. `TASKS_ARCHIVE.md` is created
+automatically on the first archive, no template needed.
 
 ## If TASKS.md doesn't exist yet
 

@@ -4,6 +4,9 @@ Parser and manager for TASKS.md.
 
 Reads markdown tables, returns JSON. Updates statuses, adds and archives tasks.
 
+Completed tasks move out to TASKS_ARCHIVE.md (next to TASKS.md) so the
+working file stays small.
+
 Usage:
     python3 tasks.py list                          # All tasks (active + backlog)
     python3 tasks.py active                        # Active only
@@ -12,7 +15,9 @@ Usage:
     python3 tasks.py update T-001 "✅ Done"        # Update status
     python3 tasks.py add "Title" "path.md"         # Add to Active
     python3 tasks.py add-backlog "Title" "path.md" "Note"
-    python3 tasks.py archive T-001                 # Move to archive
+    python3 tasks.py archive T-001 [T-002 ...]     # Move to TASKS_ARCHIVE.md
+    python3 tasks.py archive-done                  # Archive every ✅ Done task
+    python3 tasks.py migrate-archive               # Move in-file archive sections out
     python3 tasks.py next-id                       # Next free ID
 """
 
@@ -48,9 +53,28 @@ def find_tasks_md() -> str:
     sys.exit(1)
 
 
+ARCHIVE_NAME = "TASKS_ARCHIVE.md"
+
+# Overflow limits — past these the working file is too big to keep in context
+# comfortably, and `archive-done` should be offered.
+MAX_ACTIVE_ROWS = 40
+MAX_DONE_ROWS = 10
+MAX_BYTES = 100_000
+
+
+def archive_md_path(tasks_path: str) -> str:
+    """TASKS_ARCHIVE.md lives next to TASKS.md."""
+    return os.path.join(os.path.dirname(os.path.abspath(tasks_path)), ARCHIVE_NAME)
+
+
 def read_file(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def read_archive(tasks_path: str) -> str:
+    path = archive_md_path(tasks_path)
+    return read_file(path) if os.path.isfile(path) else ""
 
 
 def write_file(path: str, content: str):
@@ -124,38 +148,33 @@ def parse_section(
 
 def parse_tasks(content: str) -> dict:
     """Parse all sections of TASKS.md."""
-    # Active tasks
-    active_headers, active_rows, _, _ = parse_section(
-        content, r"^##\s+🚀\s+Active tasks"
-    )
+    # Sections are matched by their emoji only — the heading text is free-form
+    # and often localized ("## 🚀 Активные задачи").
+    _, active_rows, _, _ = parse_section(content, ACTIVE_SECTION)
 
-    # Backlog
-    backlog_headers, backlog_rows, _, _ = parse_section(content, r"^##\s+📦\s+Backlog")
+    _, backlog_rows, _, _ = parse_section(content, BACKLOG_SECTION)
 
-    def row_to_task(row: list[str], headers: list[str], section: str) -> dict:
-        task = {"section": section}
-        for idx, header in enumerate(headers):
-            key = header.lower().strip()
-            val = row[idx] if idx < len(row) else ""
-            if key == "id":
-                task["id"] = val
-            elif key == "date":
-                task["date"] = val
-            elif key == "task":
-                task["title"] = val
-            elif key == "plan":
-                task["plan"] = val
-                # Extract path from a markdown link
-                link_match = re.search(r"\[.*?\]\((.*?)\)", val)
-                task["plan_path"] = link_match.group(1) if link_match else ""
-            elif key == "status":
-                task["status"] = val
-            elif key == "note":
-                task["note"] = val
+    def row_to_task(row: list[str], section: str) -> dict:
+        # Columns are read by position, not by header name: the layout is fixed
+        # (and assumed by add_task/update_task_status), while header text is
+        # free-form and localized in real projects ("Задача", "Статус").
+        cell = lambda i: row[i] if i < len(row) else ""
+        plan = cell(3)
+        link = re.search(r"\[.*?\]\((.*?)\)", plan)
+        task = {
+            "section": section,
+            "id": cell(0),
+            "date": cell(1),
+            "title": cell(2),
+            "plan": plan,
+            "plan_path": link.group(1) if link else "",
+        }
+        # Last column is Status in Active, Note in Backlog.
+        task["status" if section == "active" else "note"] = cell(4)
         return task
 
-    active = [row_to_task(r, active_headers, "active") for r in active_rows]
-    backlog = [row_to_task(r, backlog_headers, "backlog") for r in backlog_rows]
+    active = [row_to_task(r, "active") for r in active_rows]
+    backlog = [row_to_task(r, "backlog") for r in backlog_rows]
 
     return {
         "active": active,
@@ -167,9 +186,13 @@ def parse_tasks(content: str) -> dict:
     }
 
 
-def get_next_id(content: str) -> str:
-    """Find the next free ID."""
-    ids = re.findall(r"T-(\d+)", content)
+def get_next_id(content: str, archive_content: str = "") -> str:
+    """Find the next free ID.
+
+    The archive must be scanned too — once a task moves to TASKS_ARCHIVE.md its
+    ID is gone from TASKS.md, and ignoring it would hand out a duplicate.
+    """
+    ids = re.findall(r"T-(\d+)", content + "\n" + archive_content)
     if not ids:
         return "T-001"
     max_id = max(int(i) for i in ids)
@@ -178,6 +201,9 @@ def get_next_id(content: str) -> str:
 
 ACTIVE_HEADER = "## 🚀"
 BACKLOG_HEADER = "## 📦"
+ARCHIVE_HEADER = "## ✅"
+ACTIVE_SECTION = r"^##\s+🚀"
+BACKLOG_SECTION = r"^##\s+📦"
 
 
 def update_task_status(
@@ -222,10 +248,15 @@ def update_task_status(
 
 
 def add_task(
-    content: str, title: str, plan_path: str, section: str = "active", note: str = ""
+    content: str,
+    title: str,
+    plan_path: str,
+    section: str = "active",
+    note: str = "",
+    archive_content: str = "",
 ) -> tuple[str, str]:
     """Add a new task to the given section."""
-    next_id = get_next_id(content)
+    next_id = get_next_id(content, archive_content)
     today = date.today().strftime("%Y-%m-%d")
     title = esc_cell(title)
     note = esc_cell(note)
@@ -238,11 +269,11 @@ def add_task(
 
     if section == "active":
         new_row = f"| {next_id} | {today} | {title} | {plan_cell} | 📝 Planning |"
-        pattern = r"^##\s+🚀\s+Active tasks"
+        pattern = ACTIVE_SECTION
     else:
         note_text = note if note else ""
         new_row = f"| {next_id} | {today} | {title} | {plan_cell} | {note_text} |"
-        pattern = r"^##\s+📦\s+Backlog"
+        pattern = BACKLOG_SECTION
 
     lines = content.split("\n")
     in_section = False
@@ -273,66 +304,109 @@ def add_task(
     return "\n".join(lines), next_id
 
 
-def archive_task(content: str, task_id: str) -> tuple[str, str]:
-    """Move a task from Active to today's archive section."""
-    lines = content.split("\n")
-    task_line = None
-    task_line_idx = -1
-    task_title = ""
+ARCHIVE_INTRO = (
+    "# Archived tasks\n"
+    "\n"
+    "> Written by the `task-tracker` skill (`tasks.py archive` / `archive-done`).\n"
+    "> Append-only, newest section on top. Active work lives in `TASKS.md`.\n"
+)
+ARCHIVE_TABLE = ["| ID | Date | Task | Plan | Status |", "|----|------|------|------|--------|"]
 
-    for i, line in enumerate(lines):
-        if f"| {task_id} |" in line:
+
+def pop_task_rows(content: str, task_ids: list[str]) -> tuple[str, list[str], list[str]]:
+    """Cut the table rows of the given IDs out of TASKS.md.
+
+    Returns (content_without_rows, rows, found_ids). Rows are returned verbatim
+    so nothing (plan link, status, note) is lost on the way to the archive.
+    """
+    wanted = set(task_ids)
+    kept: list[str] = []
+    rows: list[str] = []
+    found: list[str] = []
+
+    for line in content.split("\n"):
+        if line.strip().startswith("|"):
             cells = parse_table_row(line)
-            if len(cells) >= 4:
-                task_title = cells[2]  # Task title
-                task_line = line
-                task_line_idx = i
-            break
+            if cells and cells[0] in wanted:
+                rows.append(line.strip())
+                found.append(cells[0])
+                continue
+        kept.append(line)
 
-    if task_line_idx < 0:
-        return "", ""
+    return "\n".join(kept), rows, found
 
-    lines.pop(task_line_idx)
 
+def append_to_archive(archive_content: str, rows: list[str]) -> str:
+    """Insert rows into today's section of TASKS_ARCHIVE.md, creating what's missing."""
     today = date.today().strftime("%Y-%m-%d")
-    archive_header = f"## ✅ Archived {today}"
+    header = f"## ✅ Archived {today}"
 
-    archive_idx = -1
-    for i, line in enumerate(lines):
-        if archive_header in line:
-            archive_idx = i
-            break
+    if not archive_content.strip():
+        archive_content = ARCHIVE_INTRO
+    lines = archive_content.rstrip("\n").split("\n")
 
-    if archive_idx < 0:
-        # Find the first "✅ Archived" section and insert before it
-        inserted = False
-        for i, line in enumerate(lines):
-            if line.strip().startswith("## ✅ Archived"):
-                archive_entry = f"\n{archive_header}\n\n- {task_title} ({task_id})\n"
-                lines.insert(i, archive_entry)
-                inserted = True
-                break
-        if not inserted:
-            # No archive section anywhere — create one at the end of the
-            # file, otherwise the popped task would be lost.
-            while lines and lines[-1].strip() == "":
-                lines.pop()
-            lines.extend(["", archive_header, "", f"- {task_title} ({task_id})", ""])
-
+    idx = next((i for i, l in enumerate(lines) if l.strip() == header), -1)
+    if idx < 0:
+        # New dated section goes above the previous ones — newest first.
+        at = next(
+            (i for i, l in enumerate(lines) if l.strip().startswith("## ")), len(lines)
+        )
+        lines[at:at] = ["", header, "", *ARCHIVE_TABLE, *rows, ""]
     else:
-        # Section exists — append below its header
-        insert_at = archive_idx + 1
-        while insert_at < len(lines):
-            stripped = lines[insert_at].strip()
-            if stripped.startswith("- "):
-                insert_at += 1
-            elif stripped == "":
-                insert_at += 1
-            else:
-                break
-        lines.insert(insert_at, f"- {task_title} ({task_id})")
+        # Existing section — append after its last row, before the blank tail.
+        at = idx + 1
+        while at < len(lines) and not lines[at].strip().startswith("## "):
+            at += 1
+        while at > idx and lines[at - 1].strip() == "":
+            at -= 1
+        lines[at:at] = rows
 
-    return "\n".join(lines), task_title
+    return "\n".join(lines).strip("\n") + "\n"
+
+
+def extract_legacy_archive(content: str) -> tuple[str, str]:
+    """Cut every '## ✅ …' section out of TASKS.md (the old in-file archive).
+
+    Matches on the emoji alone — heading text is localized in real projects
+    ("## ✅ Архивировано 2026-08-01").
+    """
+    kept: list[str] = []
+    moved: list[str] = []
+    in_archive = False
+
+    for line in content.split("\n"):
+        if line.strip().startswith("## "):
+            in_archive = line.strip().startswith(ARCHIVE_HEADER)
+        (moved if in_archive else kept).append(line)
+
+    return "\n".join(kept).rstrip("\n") + "\n", "\n".join(moved).strip("\n")
+
+
+def overflow_report(content: str, parsed: dict) -> dict:
+    """How close TASKS.md is to being unmanageably large."""
+    active = parsed["total_active"]
+    done = len(parsed["completed"])
+    size = len(content.encode("utf-8"))
+    report = {
+        "active_rows": active,
+        "done_rows": done,
+        "bytes": size,
+        "over_limit": (
+            active > MAX_ACTIVE_ROWS or done > MAX_DONE_ROWS or size > MAX_BYTES
+        ),
+    }
+    if report["over_limit"]:
+        size_note = f"{active} active rows, {done} done, {size // 1024} KB"
+        report["hint"] = (
+            f"TASKS.md is overflowing ({size_note}) — run `tasks.py archive-done` "
+            f"to move ✅ tasks into {ARCHIVE_NAME}"
+            if done
+            # Nothing is done — archive-done would be a no-op, so don't send
+            # the agent there; the rows themselves need triage.
+            else f"TASKS.md is overflowing ({size_note}) and nothing is ✅ — "
+            f"review the active rows: close, split, or drop to Backlog"
+        )
+    return report
 
 
 def cmd_list(tasks_path: str, filter_section: Optional[str] = None):
@@ -362,6 +436,9 @@ def cmd_list(tasks_path: str, filter_section: Optional[str] = None):
                 "completed": len(result["completed"]),
             },
         }
+
+    if filter_section != "backlog":
+        output["overflow"] = overflow_report(content, result)
 
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
@@ -425,7 +502,9 @@ def cmd_add(
     note: str = "",
 ):
     content = read_file(tasks_path)
-    updated, new_id = add_task(content, title, plan_path, section, note)
+    updated, new_id = add_task(
+        content, title, plan_path, section, note, read_archive(tasks_path)
+    )
     if not updated:
         header = "## 🚀 Active tasks" if section == "active" else "## 📦 Backlog"
         print(
@@ -456,22 +535,80 @@ def cmd_add(
     )
 
 
-def cmd_archive(tasks_path: str, task_id: str):
+def cmd_archive(tasks_path: str, task_ids: list[str]):
     content = read_file(tasks_path)
-    updated, title = archive_task(content, task_id)
+    updated, rows, found = pop_task_rows(content, task_ids)
 
-    if not updated:
-        print(json.dumps({"error": f"Task {task_id} not found"}, ensure_ascii=False))
+    missing = [t for t in task_ids if t not in found]
+    if not found:
+        print(
+            json.dumps(
+                {"error": f"Task(s) not found: {', '.join(missing)}"},
+                ensure_ascii=False,
+            )
+        )
         sys.exit(1)
 
+    write_file(archive_md_path(tasks_path), append_to_archive(read_archive(tasks_path), rows))
     write_file(tasks_path, updated)
     print(
         json.dumps(
             {
                 "success": True,
-                "task_id": task_id,
-                "title": title,
-                "message": f"Task {task_id} moved to archive",
+                "archived": found,
+                "not_found": missing,
+                "archive_file": ARCHIVE_NAME,
+                "message": f"Moved {len(found)} task(s) to {ARCHIVE_NAME}",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
+def cmd_archive_done(tasks_path: str):
+    """Overflow relief: every ✅ task in Active goes to the archive file."""
+    content = read_file(tasks_path)
+    done_ids = [t["id"] for t in parse_tasks(content)["completed"]]
+
+    if not done_ids:
+        print(
+            json.dumps(
+                {"success": True, "archived": [], "message": "No ✅ tasks to archive"},
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    cmd_archive(tasks_path, done_ids)
+
+
+def cmd_migrate_archive(tasks_path: str):
+    """One-shot: pull the old in-file '## ✅ …' sections out into TASKS_ARCHIVE.md."""
+    content = read_file(tasks_path)
+    updated, legacy = extract_legacy_archive(content)
+
+    if not legacy.strip():
+        print(
+            json.dumps(
+                {"success": True, "moved_sections": 0, "message": "Nothing to migrate"},
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    archive = read_archive(tasks_path) or ARCHIVE_INTRO
+    write_file(archive_md_path(tasks_path), archive.rstrip("\n") + "\n\n" + legacy + "\n")
+    write_file(tasks_path, updated)
+    print(
+        json.dumps(
+            {
+                "success": True,
+                "moved_sections": legacy.count("\n" + ARCHIVE_HEADER)
+                + legacy.startswith(ARCHIVE_HEADER),
+                "moved_lines": legacy.count("\n") + 1,
+                "archive_file": ARCHIVE_NAME,
+                "message": f"In-file archive moved to {ARCHIVE_NAME}",
             },
             ensure_ascii=False,
             indent=2,
@@ -481,7 +618,7 @@ def cmd_archive(tasks_path: str, task_id: str):
 
 def cmd_next_id(tasks_path: str):
     content = read_file(tasks_path)
-    next_id = get_next_id(content)
+    next_id = get_next_id(content, read_archive(tasks_path))
     print(json.dumps({"next_id": next_id}, ensure_ascii=False))
 
 
@@ -490,7 +627,7 @@ def main():
         print(
             json.dumps(
                 {
-                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, next-id"
+                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, archive-done, migrate-archive, next-id"
                 },
                 ensure_ascii=False,
             )
@@ -558,11 +695,18 @@ def main():
         if len(sys.argv) < 3:
             print(
                 json.dumps(
-                    {"error": "Specify a task ID: archive T-001"}, ensure_ascii=False
+                    {"error": "Specify a task ID: archive T-001 [T-002 ...]"},
+                    ensure_ascii=False,
                 )
             )
             sys.exit(1)
-        cmd_archive(tasks_path, sys.argv[2])
+        cmd_archive(tasks_path, sys.argv[2:])
+
+    elif command == "archive-done":
+        cmd_archive_done(tasks_path)
+
+    elif command == "migrate-archive":
+        cmd_migrate_archive(tasks_path)
 
     elif command == "next-id":
         cmd_next_id(tasks_path)
