@@ -18,6 +18,7 @@ Usage:
     python3 tasks.py archive T-001 [T-002 ...]     # Move to TASKS_ARCHIVE.md
     python3 tasks.py archive-done                  # Archive every ✅ Done task
     python3 tasks.py migrate-archive               # Move in-file archive sections out
+    python3 tasks.py rotate-archive                # Split past years into TASKS_ARCHIVE_YYYY.md
     python3 tasks.py next-id                       # Next free ID
 """
 
@@ -62,9 +63,10 @@ MAX_DONE_ROWS = 10
 MAX_BYTES = 100_000
 
 
-def archive_md_path(tasks_path: str) -> str:
-    """TASKS_ARCHIVE.md lives next to TASKS.md."""
-    return os.path.join(os.path.dirname(os.path.abspath(tasks_path)), ARCHIVE_NAME)
+def archive_md_path(tasks_path: str, year: str = "") -> str:
+    """TASKS_ARCHIVE.md (or a rotated TASKS_ARCHIVE_YYYY.md) next to TASKS.md."""
+    name = f"TASKS_ARCHIVE_{year}.md" if year else ARCHIVE_NAME
+    return os.path.join(os.path.dirname(os.path.abspath(tasks_path)), name)
 
 
 def read_file(path: str) -> str:
@@ -73,8 +75,20 @@ def read_file(path: str) -> str:
 
 
 def read_archive(tasks_path: str) -> str:
+    """The current archive only — what `archive` appends to."""
     path = archive_md_path(tasks_path)
     return read_file(path) if os.path.isfile(path) else ""
+
+
+def read_archive_all(tasks_path: str) -> str:
+    """Current archive plus every rotated year — the full ID history."""
+    folder = os.path.dirname(os.path.abspath(tasks_path))
+    names = sorted(
+        f
+        for f in os.listdir(folder)
+        if f.startswith("TASKS_ARCHIVE") and f.endswith(".md")
+    )
+    return "\n".join(read_file(os.path.join(folder, f)) for f in names)
 
 
 def write_file(path: str, content: str):
@@ -364,6 +378,64 @@ def append_to_archive(archive_content: str, rows: list[str]) -> str:
     return "\n".join(lines).strip("\n") + "\n"
 
 
+SECTION_DATE = re.compile(r"(\d{4})-\d{2}-\d{2}")
+
+
+def split_archive_by_year(archive_content: str, keep_year: str) -> tuple[str, dict[str, str]]:
+    """Split the archive into (kept_text, {year: text}) by section date.
+
+    The intro and any section without a parseable date stay put — rotation
+    must never guess where undated content belongs.
+    """
+    head: list[str] = []
+    kept: list[str] = []
+    moved: dict[str, list[str]] = {}
+    section: Optional[list[str]] = None
+    year: Optional[str] = None
+
+    def flush():
+        if section is None:
+            return
+        text = "\n".join(section).strip("\n")
+        if year and year != keep_year:
+            moved.setdefault(year, []).append(text)
+        else:
+            kept.append(text)
+
+    for line in archive_content.split("\n"):
+        if line.strip().startswith(ARCHIVE_HEADER):
+            flush()
+            found = SECTION_DATE.search(line)
+            year = found.group(1) if found else None
+            section = [line]
+            continue
+        (section if section is not None else head).append(line)
+    flush()
+
+    head_text = "\n".join(head).strip("\n")
+    parts = [p for p in [head_text, *kept] if p]
+    return "\n\n".join(parts) + "\n", {y: "\n\n".join(s) for y, s in moved.items()}
+
+
+def year_archive(existing: str, sections: str, year: str) -> str:
+    """Put rotated sections at the top of TASKS_ARCHIVE_YYYY.md, under its intro."""
+    if not existing.strip():
+        existing = (
+            f"# Archived tasks — {year}\n"
+            f"\n"
+            f"> Rotated out of `{ARCHIVE_NAME}` by `tasks.py rotate-archive`.\n"
+        )
+    lines = existing.rstrip("\n").split("\n")
+    at = next((i for i, l in enumerate(lines) if l.strip().startswith("## ")), len(lines))
+    lines[at:at] = ["", *sections.split("\n"), ""]
+    return "\n".join(lines).strip("\n") + "\n"
+
+
+def stale_archive_years(archive_content: str, keep_year: str) -> list[str]:
+    """Years sitting in TASKS_ARCHIVE.md that rotation would move out."""
+    return sorted(split_archive_by_year(archive_content, keep_year)[1])
+
+
 def extract_legacy_archive(content: str) -> tuple[str, str]:
     """Cut every '## ✅ …' section out of TASKS.md (the old in-file archive).
 
@@ -439,6 +511,20 @@ def cmd_list(tasks_path: str, filter_section: Optional[str] = None):
 
     if filter_section != "backlog":
         output["overflow"] = overflow_report(content, result)
+        archive = read_archive(tasks_path)
+        if archive:
+            stale = stale_archive_years(archive, date.today().strftime("%Y"))
+            output["archive"] = {
+                "file": ARCHIVE_NAME,
+                "bytes": len(archive.encode("utf-8")),
+                "stale_years": stale,
+            }
+            if stale:
+                output["archive"]["hint"] = (
+                    f"{ARCHIVE_NAME} still holds {', '.join(stale)} — run "
+                    f"`tasks.py rotate-archive` to split past years into "
+                    f"TASKS_ARCHIVE_YYYY.md"
+                )
 
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
@@ -503,7 +589,7 @@ def cmd_add(
 ):
     content = read_file(tasks_path)
     updated, new_id = add_task(
-        content, title, plan_path, section, note, read_archive(tasks_path)
+        content, title, plan_path, section, note, read_archive_all(tasks_path)
     )
     if not updated:
         header = "## 🚀 Active tasks" if section == "active" else "## 📦 Backlog"
@@ -616,9 +702,45 @@ def cmd_migrate_archive(tasks_path: str):
     )
 
 
+def cmd_rotate_archive(tasks_path: str):
+    """Keep TASKS_ARCHIVE.md to the current year; older years get their own file."""
+    archive = read_archive(tasks_path)
+    this_year = date.today().strftime("%Y")
+    kept, by_year = split_archive_by_year(archive, this_year)
+
+    if not by_year:
+        print(
+            json.dumps(
+                {"success": True, "rotated": {}, "message": "Nothing to rotate"},
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    written = {}
+    for year, sections in sorted(by_year.items()):
+        path = archive_md_path(tasks_path, year)
+        existing = read_file(path) if os.path.isfile(path) else ""
+        write_file(path, year_archive(existing, sections, year))
+        written[year] = os.path.basename(path)
+
+    write_file(archive_md_path(tasks_path), kept)
+    print(
+        json.dumps(
+            {
+                "success": True,
+                "rotated": written,
+                "message": f"Moved {len(written)} year(s) out of {ARCHIVE_NAME}",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
 def cmd_next_id(tasks_path: str):
     content = read_file(tasks_path)
-    next_id = get_next_id(content, read_archive(tasks_path))
+    next_id = get_next_id(content, read_archive_all(tasks_path))
     print(json.dumps({"next_id": next_id}, ensure_ascii=False))
 
 
@@ -627,7 +749,7 @@ def main():
         print(
             json.dumps(
                 {
-                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, archive-done, migrate-archive, next-id"
+                    "error": "Specify a command: list, active, backlog, show, update, add, add-backlog, archive, archive-done, migrate-archive, rotate-archive, next-id"
                 },
                 ensure_ascii=False,
             )
@@ -707,6 +829,9 @@ def main():
 
     elif command == "migrate-archive":
         cmd_migrate_archive(tasks_path)
+
+    elif command == "rotate-archive":
+        cmd_rotate_archive(tasks_path)
 
     elif command == "next-id":
         cmd_next_id(tasks_path)

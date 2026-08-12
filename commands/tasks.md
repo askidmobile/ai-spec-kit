@@ -1,7 +1,7 @@
 ---
 description: Manage project tasks in TASKS.md via the task-tracker skill. Shows active tasks, adds new ones, updates statuses, archives completed ones to TASKS_ARCHIVE.md.
 allowed-tools: Read, Edit, Bash, TodoWrite, AskUserQuestion
-argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX | archive-done"
+argument-hint: "list | active | backlog | show T-XXX | update T-XXX <status> | add <title> | archive T-XXX | archive-done | rotate-archive"
 ---
 
 # Task Management (TASKS)
@@ -58,6 +58,7 @@ Parse the JSON response and show the result to the user.
 | `archive T-XXX [T-YYY ...]` | Move rows to `TASKS_ARCHIVE.md` |
 | `archive-done` | Move every ✅ Done task to `TASKS_ARCHIVE.md` |
 | `migrate-archive` | One-shot: pull old in-file `## ✅ …` sections out to `TASKS_ARCHIVE.md` |
+| `rotate-archive` | Split past years out to `TASKS_ARCHIVE_YYYY.md` |
 | `next-id` | Get the next free ID |
 
 ## Overflow
@@ -66,6 +67,10 @@ Parse the JSON response and show the result to the user.
 `bytes`, `over_limit`, `hint`). If `over_limit` is `true` — show it and offer
 `archive-done`; never trim `TASKS.md` by hand. `TASKS_ARCHIVE.md` is created
 automatically on the first archive, no template needed.
+
+They also return an `archive` block once that file exists. A non-empty
+`stale_years` means the archive is holding past years — offer
+`rotate-archive`.
 
 ## If TASKS.md doesn't exist yet
 

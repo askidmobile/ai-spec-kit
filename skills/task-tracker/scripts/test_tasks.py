@@ -89,6 +89,59 @@ class LegacyMigrationTests(unittest.TestCase):
         self.assertEqual(legacy, "")
 
 
+ARCHIVE = """# Archived tasks
+
+> Intro line.
+
+## ✅ Archived 2026-08-12
+
+| T-003 | 2026-08-12 | This year | — | ✅ Done |
+
+## ✅ Архивировано 2025-11-02
+
+| T-002 | 2025-11-02 | Last year | — | ✅ Done |
+
+## ✅ Archived 2024-01-09
+
+| T-001 | 2024-01-09 | Ancient | — | ✅ Done |
+"""
+
+
+class RotateTests(unittest.TestCase):
+    def test_splits_past_years_out(self):
+        kept, moved = tasks.split_archive_by_year(ARCHIVE, "2026")
+        self.assertEqual(sorted(moved), ["2024", "2025"])
+        self.assertIn("| T-003 |", kept)
+        self.assertNotIn("| T-002 |", kept)
+        self.assertIn("# Archived tasks", kept)  # intro survives
+        self.assertIn("| T-002 |", moved["2025"])
+        # Localized headings rotate too — the date is what matters.
+        self.assertIn("Архивировано", moved["2025"])
+
+    def test_undated_section_stays(self):
+        content = "# Archived tasks\n\n## ✅ Archived\n\n- No date here\n"
+        kept, moved = tasks.split_archive_by_year(content, "2026")
+        self.assertEqual(moved, {})
+        self.assertIn("No date here", kept)
+
+    def test_nothing_to_rotate_when_single_year(self):
+        kept, moved = tasks.split_archive_by_year(ARCHIVE, "2024")
+        self.assertEqual(sorted(moved), ["2025", "2026"])
+        self.assertEqual(tasks.stale_archive_years(ARCHIVE, "2020"), ["2024", "2025", "2026"])
+        self.assertIn("| T-001 |", kept)
+
+    def test_year_file_gets_intro_and_keeps_existing(self):
+        _, moved = tasks.split_archive_by_year(ARCHIVE, "2026")
+        first = tasks.year_archive("", moved["2025"], "2025")
+        self.assertIn("# Archived tasks — 2025", first)
+        self.assertIn("| T-002 |", first)
+        # A second rotation into the same year must not drop what's there.
+        again = tasks.year_archive(first, "## ✅ Archived 2025-01-01\n\n| T-000 | … |", "2025")
+        self.assertIn("| T-002 |", again)
+        self.assertIn("| T-000 |", again)
+        self.assertEqual(again.count("# Archived tasks — 2025"), 1)
+
+
 class OverflowTests(unittest.TestCase):
     def test_quiet_when_small(self):
         report = tasks.overflow_report(BASE, tasks.parse_tasks(BASE))

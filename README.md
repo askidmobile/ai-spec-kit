@@ -221,8 +221,10 @@ of project initialization.
 `TASKS.md` is read into context every session, so it has to stay small.
 `/tasks` reports when it overflows (40+ active rows, 10+ done, or 100 KB) and
 offers `archive-done`; finished tasks live in `TASKS_ARCHIVE.md`, created on
-first use. A project that predates it: `/tasks migrate-archive` moves the old
-in-file `## ✅ …` sections out once.
+first use. Once the year turns, `/tasks rotate-archive` splits past years into
+`TASKS_ARCHIVE_YYYY.md` so no single file keeps growing. A project that
+predates all this: `/tasks migrate-archive` moves the old in-file `## ✅ …`
+sections out once.
 
 If `TASKS.md` doesn't exist yet:
 

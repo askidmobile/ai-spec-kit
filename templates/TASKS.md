@@ -15,6 +15,7 @@
 
 <!--
 Completed tasks don't stay here — `/tasks archive T-XXX` (or `archive-done`)
-moves their rows to `TASKS_ARCHIVE.md`, which is created on first use.
+moves their rows to `TASKS_ARCHIVE.md`, which is created on first use;
+`/tasks rotate-archive` later splits past years into `TASKS_ARCHIVE_YYYY.md`.
 Keep this file small: it's read into context every session.
 -->

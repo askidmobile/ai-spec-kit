@@ -26,7 +26,8 @@ Two files, both in the project root:
 | File | Holds | Written by |
 |------|-------|------------|
 | `TASKS.md` | Active tasks + Backlog — what's in flight | `add`, `update` |
-| `TASKS_ARCHIVE.md` | Everything finished, in dated sections, newest on top | `archive`, `archive-done`, `migrate-archive` |
+| `TASKS_ARCHIVE.md` | Everything finished this year, in dated sections, newest on top | `archive`, `archive-done`, `migrate-archive` |
+| `TASKS_ARCHIVE_YYYY.md` | Past years, split off once the year turns | `rotate-archive` |
 
 `TASKS.md` is the file that gets read into context on every session, so it has
 to stay small. Completed tasks belong in the archive file, not in it.
@@ -87,10 +88,13 @@ python3 <SKILL_DIR>/scripts/tasks.py archive-done
 # One-shot for older projects: pull the in-file "## ✅ Archived …" sections
 # out of TASKS.md into TASKS_ARCHIVE.md
 python3 <SKILL_DIR>/scripts/tasks.py migrate-archive
+
+# Keep the archive to the current year — past years get TASKS_ARCHIVE_YYYY.md
+python3 <SKILL_DIR>/scripts/tasks.py rotate-archive
 ```
 
 The whole table row travels, so the plan link and the final status survive.
-IDs are never reused — `next-id` scans the archive too.
+IDs are never reused — `next-id` scans every archive file, rotated ones too.
 
 ## Workflow: Show tasks
 
@@ -124,6 +128,16 @@ When the user asks to show tasks:
    rows need triage (close, split, or drop to Backlog).
 
 Never trim `TASKS.md` by hand to make it fit — archiving is how it shrinks.
+
+The same responses carry an `archive` block once the archive file exists:
+
+```json
+"archive": {"file": "TASKS_ARCHIVE.md", "bytes": 293171, "stale_years": ["2025"], "hint": "..."}
+```
+
+`stale_years` lists years the archive is still holding — offer
+`rotate-archive`, which moves each one into its own `TASKS_ARCHIVE_YYYY.md`.
+An empty list means there's nothing to rotate; don't run it then.
 
 ## Workflow: After context compaction
 
