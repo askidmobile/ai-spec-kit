@@ -293,5 +293,48 @@ class NextIdTests(unittest.TestCase):
         self.assertEqual(tasks.get_next_id(BASE, archive), "T-043")
 
 
+class StatusMarkerTests(unittest.TestCase):
+    """Real statuses are long and quote per-phase progress inside the text.
+
+    Incident 2026-08-20 (Yttri TASKS.md): `archive-done` matched "✅" anywhere in
+    the status cell and was about to file two ACTIVE tasks — "🔄 In progress —
+    phases 1-5/7 ✅" and "📝 Spec ready … phase 1 ✅" — into the archive.
+    """
+
+    def test_marker_is_read_from_the_start_not_from_the_text(self):
+        self.assertTrue(tasks.is_done_status("✅ Done 2026-08-16"))
+        self.assertTrue(tasks.is_done_status("  ✅ Done"))
+        self.assertTrue(tasks.is_done_status("**✅ Done**"))
+
+        self.assertFalse(tasks.is_done_status("🔄 In progress — phases 1-5/7 ✅"))
+        self.assertFalse(tasks.is_done_status("📝 Spec ready 2026-08-13, phase 1 ✅"))
+        self.assertFalse(tasks.is_done_status("👀 In review — all 7 phases ✅"))
+        self.assertFalse(tasks.is_done_status(""))
+
+    def test_cancelled_is_closed_but_not_done(self):
+        cancelled = "❌ Closed 2026-08-12 without implementation"
+        self.assertTrue(tasks.is_cancelled_status(cancelled))
+        self.assertTrue(tasks.is_closed_status(cancelled))
+        # Statistics must not count a cancelled task as delivered work.
+        self.assertFalse(tasks.is_done_status(cancelled))
+
+    def test_in_progress_marker_is_also_leading_only(self):
+        self.assertTrue(tasks.is_in_progress_status("🔄 In progress"))
+        self.assertTrue(tasks.is_in_progress_status("🚧 Implementing"))
+        self.assertFalse(tasks.is_in_progress_status("✅ Done — 🔄 was retried twice"))
+
+    def test_parse_buckets_follow_the_leading_marker(self):
+        content = BASE.replace(
+            "| T-001 | 2026-08-01 | First task | — | 📝 Planning |",
+            "| T-001 | 2026-08-01 | Live work | — | 🔄 In progress — phases 1-5/7 ✅ |\n"
+            "| T-002 | 2026-08-02 | Shipped | — | ✅ Done |\n"
+            "| T-003 | 2026-08-03 | Dropped | — | ❌ Closed without implementation |",
+        )
+        parsed = tasks.parse_tasks(content)
+        self.assertEqual([t["id"] for t in parsed["completed"]], ["T-002"])
+        self.assertEqual([t["id"] for t in parsed["cancelled"]], ["T-003"])
+        self.assertEqual([t["id"] for t in parsed["in_progress"]], ["T-001"])
+
+
 if __name__ == "__main__":
     unittest.main()

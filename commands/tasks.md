@@ -58,7 +58,7 @@ Parse the JSON response and show the result to the user.
 | `promote T-XXX` | Backlog → Active, keeping the ID |
 | `split-backlog` | One-shot: move the Backlog section to `TASKS_BACKLOG.md` |
 | `archive T-XXX [T-YYY ...]` | Move rows to `TASKS_ARCHIVE.md` |
-| `archive-done` | Move every ✅ Done task to `TASKS_ARCHIVE.md` |
+| `archive-done` | Move every CLOSED task (✅ done, ❌ cancelled) to `TASKS_ARCHIVE.md`. The marker must LEAD the status cell — a live task reporting «🔄 In progress — phases 1-5/7 ✅» stays put |
 | `migrate-archive` | One-shot: pull old in-file `## ✅ …` sections out to `TASKS_ARCHIVE.md` |
 | `rotate-archive` | Split past years out to `TASKS_ARCHIVE_YYYY.md` |
 | `next-id` | Get the next free ID |

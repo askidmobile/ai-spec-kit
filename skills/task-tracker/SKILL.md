@@ -28,6 +28,14 @@ Two files, both in the project root:
 | `TASKS.md` | Active tasks (and Backlog, until it's split off) | `add`, `update`, `promote` |
 | `TASKS_BACKLOG.md` | Backlog — someday/maybe, once `split-backlog` ran | `add-backlog`, `promote` |
 | `TASKS_ARCHIVE.md` | Everything finished this year, in dated sections, newest on top | `archive`, `archive-done`, `migrate-archive` |
+
+**A status is closed only when its marker LEADS the cell.** Real statuses are
+long and quote per-phase progress inside the text — «🔄 In progress — phases
+1-5/7 ✅», «👀 In review — all 7 phases ✅». Matching ✅ anywhere in the cell
+files live work into the archive (caught in Yttri on 2026-08-20, two active
+tasks one command away from being archived). `is_done_status` /
+`is_cancelled_status` / `is_in_progress_status` in `tasks.py` are the single
+place that decides this; tests in `StatusMarkerTests` hold the line.
 | `TASKS_ARCHIVE_YYYY.md` | Past years, split off once the year turns | `rotate-archive` |
 
 `TASKS.md` is the file that gets read into context on every session, so it has
@@ -98,7 +106,9 @@ never splits keeps working exactly as before.
 # One or several tasks
 python3 <SKILL_DIR>/scripts/tasks.py archive T-001 T-002
 
-# Every ✅ Done task at once — the usual answer to overflow
+# Every CLOSED task at once (✅ done and ❌ cancelled) — the usual answer to
+# overflow. The marker is read from the START of the status cell, so a live
+# task reporting "🔄 In progress — phases 1-5/7 ✅" is never swept up.
 python3 <SKILL_DIR>/scripts/tasks.py archive-done
 
 # One-shot for older projects: pull the in-file "## ✅ Archived …" sections
@@ -136,8 +146,9 @@ When the user asks to show tasks:
 `over_limit` trips past 40 active rows, 10 ✅ rows, or 100 KB. When it's true:
 
 1. Show the user the numbers and the `hint`.
-2. If `done_rows > 0` — offer `archive-done`; it moves every ✅ task out in
-   one go. Don't run it silently, archiving is the user's call.
+2. If `done_rows > 0` — offer `archive-done`; it moves every closed task
+   (✅ done, ❌ cancelled) out in one go. Don't run it silently, archiving is
+   the user's call.
 3. If the file still has `## ✅ …` sections inside it (a project that predates
    `TASKS_ARCHIVE.md`) — offer `migrate-archive` first.
 4. If `done_rows` is 0 and it's still over — nothing to archive; the active

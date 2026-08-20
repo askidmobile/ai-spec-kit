@@ -214,9 +214,43 @@ def parse_tasks(content: str, backlog_content: Optional[str] = None) -> dict:
         "backlog": backlog,
         "total_active": len(active),
         "total_backlog": len(backlog),
-        "in_progress": [t for t in active if "🔄" in t.get("status", "")],
-        "completed": [t for t in active if "✅" in t.get("status", "")],
+        "in_progress": [t for t in active if is_in_progress_status(t.get("status", ""))],
+        "completed": [t for t in active if is_done_status(t.get("status", ""))],
+        "cancelled": [t for t in active if is_cancelled_status(t.get("status", ""))],
     }
+
+
+# Status markers. The marker is the LEADING glyph of the status cell — never
+# "somewhere in the text". Real statuses are long and quote per-phase progress
+# ("🔄 In progress — phases 1-5/7 ✅"), so a substring check calls an active
+# task completed and `archive-done` files live work away.
+DONE_MARKERS = ("✅",)
+CANCELLED_MARKERS = ("❌",)
+IN_PROGRESS_MARKERS = ("🔄", "🚧")
+
+
+def _has_leading_marker(status: str, markers: tuple[str, ...]) -> bool:
+    text = (status or "").strip().lstrip("*_").strip()
+    return any(text.startswith(marker) for marker in markers)
+
+
+def is_done_status(status: str) -> bool:
+    """Task is finished (✅)."""
+    return _has_leading_marker(status, DONE_MARKERS)
+
+
+def is_cancelled_status(status: str) -> bool:
+    """Task is closed without implementation (❌) — done with it, but not done."""
+    return _has_leading_marker(status, CANCELLED_MARKERS)
+
+
+def is_closed_status(status: str) -> bool:
+    """Nothing left to do here: finished or cancelled. This is what archiving asks."""
+    return is_done_status(status) or is_cancelled_status(status)
+
+
+def is_in_progress_status(status: str) -> bool:
+    return _has_leading_marker(status, IN_PROGRESS_MARKERS)
 
 
 def get_next_id(content: str, archive_content: str = "") -> str:
@@ -798,20 +832,32 @@ def cmd_promote(tasks_path: str, task_id: str):
 
 
 def cmd_archive_done(tasks_path: str):
-    """Overflow relief: every ✅ task in Active goes to the archive file."""
-    content = read_file(tasks_path)
-    done_ids = [t["id"] for t in parse_tasks(content)["completed"]]
+    """Overflow relief: every CLOSED task in Active goes to the archive file.
 
-    if not done_ids:
+    Closed means the status STARTS with ✅ or ❌ — cancelled tasks need filing
+    just as much as finished ones. A task whose status merely mentions ✅ while
+    reporting phase progress stays put; archiving live work is the one mistake
+    this command must never make.
+    """
+    content = read_file(tasks_path)
+    parsed = parse_tasks(content)
+    closed = parsed["completed"] + parsed["cancelled"]
+    closed_ids = [t["id"] for t in closed]
+
+    if not closed_ids:
         print(
             json.dumps(
-                {"success": True, "archived": [], "message": "No ✅ tasks to archive"},
+                {
+                    "success": True,
+                    "archived": [],
+                    "message": "No closed (✅/❌) tasks to archive",
+                },
                 ensure_ascii=False,
             )
         )
         return
 
-    cmd_archive(tasks_path, done_ids)
+    cmd_archive(tasks_path, closed_ids)
 
 
 def cmd_migrate_archive(tasks_path: str):
