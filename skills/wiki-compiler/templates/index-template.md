@@ -5,9 +5,9 @@ Total topics: {count} | Total concepts: {count} | Total sources: {source_count}
 
 ## Topics
 
-| Topic | Sources | Last Updated | Status |
-|-------|---------|-------------|--------|
-| [[topics/{slug}]] | {count} | {date} | active |
+| Topic | Also Known As | Sources | Last Updated | Status |
+|-------|---------------|---------|-------------|--------|
+| [[topics/{slug}]] | {keyword aliases} | {count} | {date} | active |
 
 ## Concepts
 

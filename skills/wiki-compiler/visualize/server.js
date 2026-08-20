@@ -57,34 +57,64 @@ function parseFrontmatter(content) {
   return { meta, body: match[2] };
 }
 
+// Split a markdown table row into cells WITHOUT dropping the empty ones: a
+// topic with no aliases leaves an empty cell, and squeezing it out shifts every
+// later column (source count read from the date, and so on).
+function splitRow(line) {
+  const cells = line.split('|').map(s => s.trim());
+  if (cells.length && cells[0] === '') cells.shift();
+  if (cells.length && cells[cells.length - 1] === '') cells.pop();
+  return cells;
+}
+
+// The index links topics as a wiki-link ([[topics/slug]] — what SKILL.md and
+// the template both emit) or as a markdown link ([Name](topics/slug.md)).
+// Reading only the second one leaves the graph empty on a real index.
+function parseTopicLink(cell) {
+  const wiki = cell.match(/\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]/);
+  if (wiki) {
+    const target = wiki[1].trim();
+    const slug = path.basename(target, '.md');
+    return { slug, name: (wiki[2] || slug).trim() };
+  }
+  const md = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
+  if (md) return { slug: path.basename(md[2], '.md'), name: md[1] };
+  return null;
+}
+
 function parseIndexTopics(indexContent) {
   const topics = [];
   const lines = indexContent.split('\n');
-  let inTopicTable = false;
+  let columns = null;
   for (const line of lines) {
-    if (line.includes('| Topic |')) { inTopicTable = true; continue; }
-    if (inTopicTable && line.match(/^\|[-\s|]+\|$/)) continue;
-    if (inTopicTable && line.startsWith('|')) {
-      const cols = line.split('|').map(s => s.trim()).filter(Boolean);
-      if (cols.length >= 4) {
-        const linkMatch = cols[0].match(/\[([^\]]+)\]\(([^)]+)\)/);
-        if (linkMatch) {
-          const name = linkMatch[1];
-          const filePath = linkMatch[2];
-          const slug = path.basename(filePath, '.md');
-          topics.push({
-            slug,
-            name,
-            aliases: cols[1] || '',
-            sourceCount: parseInt(cols[2]) || 0,
-            lastUpdated: cols[3] || '',
-            status: cols[4] || 'active'
-          });
-        }
-      }
-    } else if (inTopicTable && !line.startsWith('|')) {
-      inTopicTable = false;
+    const trimmed = line.trim();
+    // Header must START the row: prose quoting "| Topic |" is not a table.
+    if (/^\|\s*Topic\s*\|/i.test(trimmed)) {
+      columns = splitRow(trimmed).map(c => c.toLowerCase());
+      continue;
     }
+    if (!columns) continue;
+    if (/^\|[-:\s|]+\|$/.test(trimmed)) continue;
+    if (!trimmed.startsWith('|')) { columns = null; continue; }
+
+    const cells = splitRow(trimmed);
+    const link = parseTopicLink(cells[0] || '');
+    if (!link) continue;
+    // Columns are located by header name — the template ships 4 columns
+    // (no "Also Known As"), SKILL.md documents 5. Fixed positions read the
+    // date as a source count on one of them.
+    const at = name => {
+      const i = columns.indexOf(name);
+      return i >= 0 ? (cells[i] || '') : '';
+    };
+    topics.push({
+      slug: link.slug,
+      name: link.name,
+      aliases: at('also known as'),
+      sourceCount: parseInt(at('sources'), 10) || 0,
+      lastUpdated: at('last updated'),
+      status: at('status') || 'active'
+    });
   }
   return topics;
 }

@@ -292,6 +292,19 @@ class NextIdTests(unittest.TestCase):
         archive = "# Archived tasks\n\n| T-042 | 2026-08-01 | Old | — | ✅ Done |\n"
         self.assertEqual(tasks.get_next_id(BASE, archive), "T-043")
 
+    def test_cross_references_in_status_text_are_not_issued_ids(self):
+        # Statuses cross-reference other tasks. Reading "T-900" out of prose and
+        # issuing T-901 next punches a 900-wide hole in the numbering.
+        content = BASE.replace(
+            "| T-001 | 2026-08-01 | First task | — | 📝 Planning |",
+            "| T-001 | 2026-08-01 | First task | — | 🔄 Blocked by T-900, closes T-777 |",
+        )
+        self.assertEqual(tasks.get_next_id(content), "T-002")
+
+    def test_loose_scan_still_covers_a_file_without_table_rows(self):
+        # An unusual layout (IDs in a list, not a table) must not lose IDs.
+        self.assertEqual(tasks.get_next_id("- T-041 something\n"), "T-042")
+
 
 class StatusMarkerTests(unittest.TestCase):
     """Real statuses are long and quote per-phase progress inside the text.

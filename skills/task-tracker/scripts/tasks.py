@@ -256,14 +256,27 @@ def is_in_progress_status(status: str) -> bool:
 def get_next_id(content: str, archive_content: str = "") -> str:
     """Find the next free ID.
 
-    The archive must be scanned too — once a task moves to TASKS_ARCHIVE.md its
-    ID is gone from TASKS.md, and ignoring it would hand out a duplicate.
+    Every file that can hold a task must be scanned — once a task moves to
+    TASKS_ARCHIVE.md or to the split-off TASKS_BACKLOG.md its ID is gone from
+    TASKS.md, and ignoring that file hands out a duplicate.
+
+    IDs are read from the FIRST CELL of table rows, not from anywhere in the
+    text: statuses cross-reference other tasks ("blocked by T-419", "closes
+    T-484"), and treating a mention as an issued number punches holes in the
+    numbering. A file with no table rows at all falls back to the loose scan —
+    an unusual layout should not lose IDs entirely.
     """
-    ids = re.findall(r"T-(\d+)", content + "\n" + archive_content)
+    blob = content + "\n" + archive_content
+    ids = [
+        int(m.group(1))
+        for line in blob.split("\n")
+        if (m := re.match(r"^\s*\|\s*T-(\d+)", line))
+    ]
+    if not ids:
+        ids = [int(i) for i in re.findall(r"T-(\d+)", blob)]
     if not ids:
         return "T-001"
-    max_id = max(int(i) for i in ids)
-    return f"T-{max_id + 1:03d}"
+    return f"T-{max(ids) + 1:03d}"
 
 
 ACTIVE_HEADER = "## 🚀"
@@ -656,9 +669,7 @@ def cmd_add(
     external_backlog = section == "backlog" and backlog is not None
 
     # IDs are global: scan tasks, the split-off backlog, and every archive.
-    next_id = get_next_id(
-        content + "\n" + (backlog or ""), read_archive_all(tasks_path)
-    )
+    next_id = next_free_id(tasks_path, content, backlog)
     target = backlog if external_backlog else content
     updated, new_id = add_task(target, title, plan_path, section, note, next_id)
     if not updated:
@@ -929,10 +940,20 @@ def cmd_rotate_archive(tasks_path: str):
     )
 
 
+def next_free_id(
+    tasks_path: str, content: str | None = None, backlog: str | None = None
+) -> str:
+    """The one place that answers "which ID is free" — over ALL task files."""
+    content = read_file(tasks_path) if content is None else content
+    backlog = read_backlog(tasks_path) if backlog is None else backlog
+    return get_next_id(content + "\n" + (backlog or ""), read_archive_all(tasks_path))
+
+
 def cmd_next_id(tasks_path: str):
-    content = read_file(tasks_path)
-    next_id = get_next_id(content, read_archive_all(tasks_path))
-    print(json.dumps({"next_id": next_id}, ensure_ascii=False))
+    # Same source set as `add` uses (tasks + split-off backlog + archives):
+    # answering from a narrower set is how a caller gets an ID that is already
+    # taken in TASKS_BACKLOG.md.
+    print(json.dumps({"next_id": next_free_id(tasks_path)}, ensure_ascii=False))
 
 
 def main():
